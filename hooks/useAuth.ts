@@ -1,5 +1,5 @@
 import * as AuthSession from 'expo-auth-session';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { authService } from '../services/authService';
 import type { AuthHookReturn } from '../types/index';
 
@@ -8,20 +8,36 @@ export const useAuth = (): AuthHookReturn => {
   const [spotifyToken, setSpotifyToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const refreshTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     authService.getAuthRequest(),
     authService.getDiscovery()
   );
 
-  useEffect(() => {
-    checkAuth();
+   useEffect(() => {
+    initAuth();
+    return () => {
+      if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
+    };
   }, []);
 
   useEffect(() => {
     if (response?.type === 'success') {
-      handleAuthSuccess(response.params.access_token);
+      handleAuthSuccess(response.params.code);
     }
   }, [response]);
+
+   // --- INIT AUTH ---
+  const initAuth = async (): Promise<void> => {
+    const token = await authService.getValidAccessToken();
+    if (token) {
+      setSpotifyToken(token);
+      setIsAuthenticated(true);
+      scheduleTokenRefresh();
+    }
+    setIsLoading(false);
+  };
 
   const checkAuth = async (): Promise<void> => {
     const token = await authService.getToken();
@@ -32,11 +48,67 @@ export const useAuth = (): AuthHookReturn => {
     setIsLoading(false);
   };
 
-  const handleAuthSuccess = async (token: string): Promise<void> => {
-    const saved = await authService.saveToken(token);
-    if (saved) {
-      setSpotifyToken(token);
-      setIsAuthenticated(true);
+  const handleAuthSuccess = async (code: string): Promise<void> => {
+    try {
+    const tokenResponse = await AuthSession.exchangeCodeAsync(
+      {
+        code,
+        clientId: authService.getAuthRequest().clientId,
+        redirectUri: authService.getAuthRequest().redirectUri,
+        extraParams: {
+          code_verifier: request?.codeVerifier || '',
+        },
+      },
+      authService.getDiscovery()
+    );
+
+    const tokens = {
+      accessToken: tokenResponse.accessToken,
+      refreshToken: tokenResponse.refreshToken!, // Spotify provides this
+      expiresAt: Date.now() + tokenResponse.expiresIn! * 1000,
+    };
+
+    await authService.saveTokens(tokens);
+
+    setSpotifyToken(tokens.accessToken);
+    setIsAuthenticated(true);
+    scheduleTokenRefresh(tokens);
+  } catch (error) {
+    console.error('❌ Token exchange failed:', error);
+  }
+  };
+
+   const scheduleTokenRefresh = async (tokensParam?: { accessToken: string; refreshToken: string; expiresAt: number }) => {
+    const tokens = tokensParam || (await authService.getTokens());
+    if (!tokens) return;
+
+    const now = Date.now();
+    const timeoutMs = tokens.expiresAt - now - 60_000; // Refresh 1 min before expiry
+
+    if (timeoutMs <= 0) {
+      // Token already expired, refresh immediately
+      await refreshAccessToken(tokens.refreshToken);
+      return;
+    }
+
+    if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
+
+    refreshTimeout.current = setTimeout(async () => {
+      await refreshAccessToken(tokens.refreshToken);
+    }, timeoutMs);
+  };
+
+  // --- REFRESH TOKEN ---
+  const refreshAccessToken = async (refreshToken: string) => {
+    try {
+      const refreshed = await authService.refreshToken(refreshToken);
+      await authService.saveTokens(refreshed);
+      setSpotifyToken(refreshed.accessToken);
+      scheduleTokenRefresh(refreshed);
+    } catch (error) {
+      console.error('❌ Refresh token failed:', error);
+      // Force logout if refresh fails
+      await logout();
     }
   };
 
@@ -45,6 +117,7 @@ export const useAuth = (): AuthHookReturn => {
   };
 
   const logout = async (): Promise<void> => {
+    if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
     await authService.clearToken();
     setSpotifyToken(null);
     setIsAuthenticated(false);

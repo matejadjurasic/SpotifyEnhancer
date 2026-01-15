@@ -29,6 +29,8 @@ export const RECORDING_CONFIG = {
 
 export const STORAGE_KEYS = {
   SPOTIFY_TOKEN: 'spotify_token',
+  SPOTIFY_REFRESH_TOKEN: 'spotify_refresh_token',
+  SPOTIFY_REFRESH_TOKEN_EXPIRES_AT: 'spotify_refresh_token_expires_at'
 };
 
 export const WHISPER_RECORDING_OPTIONS: Audio.RecordingOptions = {
