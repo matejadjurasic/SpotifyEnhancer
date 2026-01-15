@@ -1,3 +1,4 @@
+import { Audio } from 'expo-av';
 import Constants from 'expo-constants';
 
 export const SPOTIFY_CLIENT_ID = Constants.expoConfig?.extra?.spotifyClientId || 
@@ -8,7 +9,14 @@ export const N8N_WEBHOOK_URL = Constants.expoConfig?.extra?.n8nWebhookUrl ||
 
 export const SPOTIFY_AUTH_CONFIG = {
   authorizationEndpoint: 'https://accounts.spotify.com/authorize',
-  scopes: ['user-read-email', 'user-read-private', 'user-top-read'],
+  scopes: [
+    'user-read-email', 
+    'user-read-private', 
+    'user-top-read',
+    'user-read-playback-state',
+    'user-modify-playback-state',
+    'streaming'
+  ],
 };
 
 export const RECORDING_CONFIG = {
@@ -21,4 +29,26 @@ export const RECORDING_CONFIG = {
 
 export const STORAGE_KEYS = {
   SPOTIFY_TOKEN: 'spotify_token',
+};
+
+export const WHISPER_RECORDING_OPTIONS: Audio.RecordingOptions = {
+  android: {
+    extension: '.wav',
+    outputFormat: Audio.AndroidOutputFormat.DEFAULT,
+    audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 128000,
+  },
+  ios: {
+    extension: '.wav',
+    audioQuality: Audio.IOSAudioQuality.HIGH,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 128000,
+    linearPCMBitDepth: 16,
+    linearPCMIsBigEndian: false,
+    linearPCMIsFloat: false,
+  },
+  web: {}
 };

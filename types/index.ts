@@ -8,8 +8,9 @@ export interface SpotifyAuthResponse {
 }
 
 export interface UploadResponse {
-  success: boolean;
-  message?: string;
+  track: string;
+  artist: string;
+  photoUrl?: string | null;
 }
 
 export interface AuthHookReturn {
@@ -26,6 +27,15 @@ export interface RecordingHookReturn {
   isUploading: boolean;
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
+  result: UploadResponse | null;
+  showConfirm: boolean;
+  setShowConfirm: (value: boolean) => void;
 }
 
 export type Recording = Audio.Recording;
+
+export interface SpotifyAuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}

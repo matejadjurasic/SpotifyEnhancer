@@ -6,7 +6,7 @@ export const uploadService = {
     const formData = new FormData();
     formData.append('audio', {
       uri: audioUri,
-      type: 'audio/m4a',
+      type: 'audio/mp4',
       name: 'recording.m4a',
     } as any);
     formData.append('spotify_token', spotifyToken);

@@ -1,5 +1,5 @@
 import { Audio } from 'expo-av';
-import { RECORDING_CONFIG } from '../config/constants';
+import { RECORDING_CONFIG, WHISPER_RECORDING_OPTIONS } from '../config/constants';
 import type { Recording } from '../types/index';
 
 export const audioService = {
@@ -11,7 +11,7 @@ export const audioService = {
   async startRecording(): Promise<Recording> {
     await Audio.setAudioModeAsync(RECORDING_CONFIG.AUDIO_MODE);
     const { recording } = await Audio.Recording.createAsync(
-      Audio.RecordingOptionsPresets.HIGH_QUALITY
+      WHISPER_RECORDING_OPTIONS
     );
     return recording;
   },

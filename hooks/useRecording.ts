@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { audioService } from '../services/audioService';
 import { uploadService } from '../services/uploadService';
-import type { Recording, RecordingHookReturn } from '../types/index';
+import type { Recording, RecordingHookReturn, UploadResponse } from '../types/index';
 
 export const useRecording = (spotifyToken: string | null): RecordingHookReturn => {
   const [recording, setRecording] = useState<Recording | null>(null);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [result, setResult] = useState<UploadResponse | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const startRecording = async (): Promise<void> => {
     try {
@@ -49,8 +51,10 @@ export const useRecording = (spotifyToken: string | null): RecordingHookReturn =
 
     setIsUploading(true);
     try {
-      await uploadService.uploadAudio(uri, spotifyToken);
-      Alert.alert('Success', 'Recording processed!');
+      const response = await uploadService.uploadAudio(uri, spotifyToken);
+      setResult(response);
+      setShowConfirm(true);
+      //Alert.alert('Success', 'Recording processed!');
     } catch (error) {
       Alert.alert('Error', `Upload failed: ${(error as Error).message}`);
     } finally {
@@ -63,5 +67,8 @@ export const useRecording = (spotifyToken: string | null): RecordingHookReturn =
     isUploading,
     startRecording,
     stopRecording,
+    result,
+    showConfirm,
+    setShowConfirm,
   };
 };

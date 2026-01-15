@@ -8,10 +8,13 @@ import { colors } from '@/styles/colors';
 import { commonStyles } from '@/styles/commonStyles';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SongConfirmModal } from '../songConfirmModal';
 
 export default function RecordingScreen() {
   const { spotifyToken, logout } = useAuth();
-  const { isRecording, isUploading, startRecording, stopRecording } = useRecording(spotifyToken);
+  const { isRecording, isUploading, startRecording, stopRecording, result,
+  showConfirm,
+  setShowConfirm,} = useRecording(spotifyToken);
   const seconds = useTimer(isRecording, stopRecording);
 
   return (
@@ -38,6 +41,20 @@ export default function RecordingScreen() {
           isUploading={isUploading}
         />
       </View>
+      {result && (
+        <SongConfirmModal
+          visible={showConfirm}
+          data={result}
+          onYes={() => {
+            setShowConfirm(false);
+            // TODO: trigger n8n play / queue webhook
+          }}
+          onNo={() => {
+            setShowConfirm(false);
+            // Optionally: allow retry or alternatives
+          }}
+        />
+      )}
     </View>
   );
 }
