@@ -1,20 +1,26 @@
-import { RecordButton } from '@/components/recording/RecordButton';
-import { RecordingInstruction } from '@/components/recording/RecordingInstruction';
-import { RecordingTimer } from '@/components/recording/RecordingTimer';
-import { useAuth } from '@/context/AuthContext';
-import { useRecording } from '@/hooks/useRecording';
-import { useTimer } from '@/hooks/useTimer';
-import { colors } from '@/styles/colors';
-import { commonStyles } from '@/styles/commonStyles';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SongConfirmModal } from '../songConfirmModal';
+import { RecordButton } from "@/components/recording/RecordButton";
+import { RecordingInstruction } from "@/components/recording/RecordingInstruction";
+import { RecordingTimer } from "@/components/recording/RecordingTimer";
+import { useAuth } from "@/context/AuthContext";
+import { useRecording } from "@/hooks/useRecording";
+import { useTimer } from "@/hooks/useTimer";
+import { colors } from "@/styles/colors";
+import { commonStyles } from "@/styles/commonStyles";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SongConfirmModal } from "../songConfirmModal";
 
 export default function RecordingScreen() {
   const { spotifyToken, logout } = useAuth();
-  const { isRecording, isUploading, startRecording, stopRecording, result,
-  showConfirm,
-  setShowConfirm,} = useRecording(spotifyToken);
+  const {
+    isRecording,
+    isUploading,
+    startRecording,
+    stopRecording,
+    result,
+    showConfirm,
+    setShowConfirm,
+  } = useRecording(spotifyToken);
   const seconds = useTimer(isRecording, stopRecording);
 
   return (
@@ -28,14 +34,14 @@ export default function RecordingScreen() {
 
       <View style={styles.content}>
         <RecordingTimer seconds={seconds} />
-        
+
         <RecordButton
           isRecording={isRecording}
           isUploading={isUploading}
           onPress={isRecording ? stopRecording : startRecording}
           disabled={isUploading}
         />
-        
+
         <RecordingInstruction
           isRecording={isRecording}
           isUploading={isUploading}
@@ -45,13 +51,8 @@ export default function RecordingScreen() {
         <SongConfirmModal
           visible={showConfirm}
           data={result}
-          onYes={() => {
+          onConfirm={() => {
             setShowConfirm(false);
-            // TODO: trigger n8n play / queue webhook
-          }}
-          onNo={() => {
-            setShowConfirm(false);
-            // Optionally: allow retry or alternatives
           }}
         />
       )}
@@ -61,18 +62,18 @@ export default function RecordingScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    position: 'absolute',
+    position: "absolute",
     top: 60,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
   },
   logoutText: {
@@ -80,6 +81,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   content: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 });

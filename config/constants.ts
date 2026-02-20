@@ -1,21 +1,23 @@
-import { Audio } from 'expo-av';
-import Constants from 'expo-constants';
+import { Audio } from "expo-av";
+import Constants from "expo-constants";
 
-export const SPOTIFY_CLIENT_ID = Constants.expoConfig?.extra?.spotifyClientId || 
+export const SPOTIFY_CLIENT_ID =
+  Constants.expoConfig?.extra?.spotifyClientId ||
   process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_ID;
 
-export const N8N_WEBHOOK_URL = Constants.expoConfig?.extra?.n8nWebhookUrl || 
+export const N8N_WEBHOOK_URL =
+  Constants.expoConfig?.extra?.n8nWebhookUrl ||
   process.env.EXPO_PUBLIC_N8N_WEBHOOK_URL;
 
 export const SPOTIFY_AUTH_CONFIG = {
-  authorizationEndpoint: 'https://accounts.spotify.com/authorize',
+  authorizationEndpoint: "https://accounts.spotify.com/authorize",
   scopes: [
-    'user-read-email', 
-    'user-read-private', 
-    'user-top-read',
-    'user-read-playback-state',
-    'user-modify-playback-state',
-    'streaming'
+    "user-read-email",
+    "user-read-private",
+    "user-top-read",
+    "user-read-playback-state",
+    "user-modify-playback-state",
+    "streaming",
   ],
 };
 
@@ -28,14 +30,14 @@ export const RECORDING_CONFIG = {
 };
 
 export const STORAGE_KEYS = {
-  SPOTIFY_TOKEN: 'spotify_token',
-  SPOTIFY_REFRESH_TOKEN: 'spotify_refresh_token',
-  SPOTIFY_REFRESH_TOKEN_EXPIRES_AT: 'spotify_refresh_token_expires_at'
+  SPOTIFY_TOKEN: "spotify_token",
+  SPOTIFY_REFRESH_TOKEN: "spotify_refresh_token",
+  SPOTIFY_TOKEN_EXPIRES_AT: "spotify_token_expires_at",
 };
 
 export const WHISPER_RECORDING_OPTIONS: Audio.RecordingOptions = {
   android: {
-    extension: '.wav',
+    extension: ".wav",
     outputFormat: Audio.AndroidOutputFormat.DEFAULT,
     audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
     sampleRate: 16000,
@@ -43,7 +45,7 @@ export const WHISPER_RECORDING_OPTIONS: Audio.RecordingOptions = {
     bitRate: 128000,
   },
   ios: {
-    extension: '.wav',
+    extension: ".wav",
     audioQuality: Audio.IOSAudioQuality.HIGH,
     sampleRate: 16000,
     numberOfChannels: 1,
@@ -52,5 +54,5 @@ export const WHISPER_RECORDING_OPTIONS: Audio.RecordingOptions = {
     linearPCMIsBigEndian: false,
     linearPCMIsFloat: false,
   },
-  web: {}
+  web: {},
 };

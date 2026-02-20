@@ -1,7 +1,7 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../styles/colors';
-import { commonStyles } from '../../styles/commonStyles';
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { colors } from "../../styles/colors";
+import { commonStyles } from "../../styles/commonStyles";
 
 interface LoginCardProps {
   onLogin: () => void;
@@ -11,9 +11,11 @@ interface LoginCardProps {
 export const LoginCard: React.FC<LoginCardProps> = ({ onLogin, disabled }) => {
   return (
     <View style={commonStyles.card}>
-      <Text style={commonStyles.title}>🎵 Soundhound Clone</Text>
-      <Text style={commonStyles.subtitle}>Connect with Spotify to continue</Text>
-      
+      <Text style={commonStyles.title}>🎵 Spotify Plus</Text>
+      <Text style={commonStyles.subtitle}>
+        Connect with Spotify to continue
+      </Text>
+
       <TouchableOpacity
         style={[styles.button, disabled && styles.buttonDisabled]}
         onPress={onLogin}
@@ -38,6 +40,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: colors.text,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
