@@ -1,9 +1,9 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import React from "react";
 
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { colors } from '@/styles/colors';
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { colors } from "@/styles/colors";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -23,11 +23,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Record',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Record",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="paperplane.fill" color={color} />
+          ),
         }}
       />
-      {/* Add more tabs here in the future */}
+      <Tabs.Screen
+        name="transcribe"
+        options={{
+          title: "Transcribe",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="mic.fill" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

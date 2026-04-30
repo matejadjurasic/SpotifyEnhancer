@@ -9,6 +9,20 @@ export const N8N_WEBHOOK_URL =
   Constants.expoConfig?.extra?.n8nWebhookUrl ||
   process.env.EXPO_PUBLIC_N8N_WEBHOOK_URL;
 
+export const N8N_TRANSCRIBE_WEBHOOK_URL =
+  Constants.expoConfig?.extra?.n8nTranscribeWebhookUrl ||
+  process.env.EXPO_PUBLIC_N8N_TRANSCRIBE_WEBHOOK_URL;
+
+export const DEEPGRAM_API_KEY =
+  Constants.expoConfig?.extra?.deepgramApiKey ||
+  process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY ||
+  "";
+
+export const DEEPGRAM_WS_URL =
+  "wss://api.deepgram.com/v1/listen" +
+  "?model=nova-3&language=en&encoding=linear16" +
+  "&sample_rate=16000&channels=1&interim_results=true";
+
 export const SPOTIFY_AUTH_CONFIG = {
   authorizationEndpoint: "https://accounts.spotify.com/authorize",
   scopes: [
@@ -17,7 +31,13 @@ export const SPOTIFY_AUTH_CONFIG = {
     "user-top-read",
     "user-read-playback-state",
     "user-modify-playback-state",
+    "user-library-read",
+    "user-library-modify",
     "streaming",
+    "playlist-modify-private",
+    "playlist-modify-public",
+    "playlist-read-private",
+    "playlist-read-collaborative",
   ],
 };
 
