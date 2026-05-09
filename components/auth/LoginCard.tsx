@@ -1,7 +1,7 @@
+import { colors } from "@/styles/colors";
+import { commonStyles } from "@/styles/commonStyles";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../styles/colors";
-import { commonStyles } from "../../styles/commonStyles";
 
 interface LoginCardProps {
   onLogin: () => void;

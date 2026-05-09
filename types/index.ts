@@ -1,11 +1,4 @@
-import { Audio } from 'expo-av';
-
-export interface SpotifyAuthResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  scope: string;
-}
+import { Audio } from "expo-av";
 
 export interface UploadResponse {
   track: string;

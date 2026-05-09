@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Alert } from 'react-native';
-import { audioService } from '../services/audioService';
-import { uploadService } from '../services/uploadService';
-import type { Recording, RecordingHookReturn, UploadResponse } from '../types/index';
+import { audioService } from "@/services/audioService";
+import { uploadService } from "@/services/uploadService";
+import type { Recording, RecordingHookReturn, UploadResponse } from "@/types";
+import { useState } from "react";
+import { Alert } from "react-native";
 
-export const useRecording = (spotifyToken: string | null): RecordingHookReturn => {
+export const useRecording = (
+  spotifyToken: string | null,
+): RecordingHookReturn => {
   const [recording, setRecording] = useState<Recording | null>(null);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -15,7 +17,7 @@ export const useRecording = (spotifyToken: string | null): RecordingHookReturn =
     try {
       const hasPermission = await audioService.requestPermission();
       if (!hasPermission) {
-        Alert.alert('Permission needed', 'Please enable microphone access');
+        Alert.alert("Permission needed", "Please enable microphone access");
         return;
       }
 
@@ -23,7 +25,10 @@ export const useRecording = (spotifyToken: string | null): RecordingHookReturn =
       setRecording(newRecording);
       setIsRecording(true);
     } catch (error) {
-      Alert.alert('Error', `Failed to start recording: ${(error as Error).message}`);
+      Alert.alert(
+        "Error",
+        `Failed to start recording: ${(error as Error).message}`,
+      );
     }
   };
 
@@ -39,13 +44,16 @@ export const useRecording = (spotifyToken: string | null): RecordingHookReturn =
         await uploadRecording(uri);
       }
     } catch (error) {
-      Alert.alert('Error', `Failed to stop recording: ${(error as Error).message}`);
+      Alert.alert(
+        "Error",
+        `Failed to stop recording: ${(error as Error).message}`,
+      );
     }
   };
 
   const uploadRecording = async (uri: string): Promise<void> => {
     if (!spotifyToken) {
-      Alert.alert('Error', 'No Spotify token available');
+      Alert.alert("Error", "No Spotify token available");
       return;
     }
 
@@ -54,9 +62,8 @@ export const useRecording = (spotifyToken: string | null): RecordingHookReturn =
       const response = await uploadService.uploadAudio(uri, spotifyToken);
       setResult(response);
       setShowConfirm(true);
-      //Alert.alert('Success', 'Recording processed!');
     } catch (error) {
-      Alert.alert('Error', `Upload failed: ${(error as Error).message}`);
+      Alert.alert("Error", `Upload failed: ${(error as Error).message}`);
     } finally {
       setIsUploading(false);
     }

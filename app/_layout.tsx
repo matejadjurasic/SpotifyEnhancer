@@ -1,8 +1,8 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
@@ -15,17 +15,14 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (isLoading) {
-      console.log("Still loading...");
       return;
     }
 
     const inAuthGroup = segments[0] === "(tabs)";
 
     if (!isAuthenticated && inAuthGroup) {
-      console.log("Not authenticated, redirecting to /auth");
       router.replace("/auth");
     } else if (isAuthenticated && !inAuthGroup) {
-      console.log("Authenticated, redirecting to /(tabs)");
       router.replace("/(tabs)");
     }
   }, [isAuthenticated, segments, isLoading]);

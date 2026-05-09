@@ -1,7 +1,7 @@
-import React from 'react';
-import { StyleSheet, Text } from 'react-native';
-import { RECORDING_CONFIG } from '../../config/constants';
-import { colors } from '../../styles/colors';
+import { RECORDING_CONFIG } from "@/config/constants";
+import { colors } from "@/styles/colors";
+import React from "react";
+import { StyleSheet, Text } from "react-native";
 
 interface RecordingTimerProps {
   seconds: number;
@@ -20,7 +20,7 @@ export const RecordingTimer: React.FC<RecordingTimerProps> = ({ seconds }) => {
 const styles = StyleSheet.create({
   timer: {
     fontSize: 48,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.primary,
     marginBottom: 40,
   },

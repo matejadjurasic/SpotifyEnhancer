@@ -1,7 +1,7 @@
+import { authService } from "@/services/authService";
+import type { AuthHookReturn, SpotifyAuthTokens } from "@/types";
 import * as AuthSession from "expo-auth-session";
 import { useEffect, useRef, useState } from "react";
-import { authService } from "../services/authService";
-import type { AuthHookReturn } from "../types/index";
 
 export const useAuthState = (): AuthHookReturn => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -34,7 +34,6 @@ export const useAuthState = (): AuthHookReturn => {
       setSpotifyToken(token);
       setIsAuthenticated(true);
       scheduleTokenRefresh();
-      console.log("Auth restored from storage");
     }
     setIsLoading(false);
   };
@@ -63,17 +62,12 @@ export const useAuthState = (): AuthHookReturn => {
       setSpotifyToken(tokens.accessToken);
       setIsAuthenticated(true);
       scheduleTokenRefresh(tokens);
-      console.log("Token exchange successful");
     } catch (error) {
       console.error("Token exchange failed:", error);
     }
   };
 
-  const scheduleTokenRefresh = async (tokensParam?: {
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: number;
-  }) => {
+  const scheduleTokenRefresh = async (tokensParam?: SpotifyAuthTokens) => {
     const tokens = tokensParam || (await authService.getTokens());
     if (!tokens) return;
 
@@ -98,7 +92,6 @@ export const useAuthState = (): AuthHookReturn => {
       await authService.saveTokens(refreshed);
       setSpotifyToken(refreshed.accessToken);
       scheduleTokenRefresh(refreshed);
-      console.log("Token refreshed successfully");
     } catch (error) {
       console.error("Token refresh failed:", error);
       await logout();
@@ -114,7 +107,6 @@ export const useAuthState = (): AuthHookReturn => {
     await authService.clearToken();
     setSpotifyToken(null);
     setIsAuthenticated(false);
-    console.log("User logged out");
   };
 
   return {

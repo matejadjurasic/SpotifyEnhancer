@@ -1,11 +1,11 @@
-import { SpotifyAuthTokens } from "@/types";
-import * as AuthSession from "expo-auth-session";
 import {
-  SPOTIFY_AUTH_CONFIG,
-  SPOTIFY_CLIENT_ID,
-  STORAGE_KEYS,
-} from "../config/constants";
-import { secureStorage } from "../utils/storage";
+    SPOTIFY_AUTH_CONFIG,
+    SPOTIFY_CLIENT_ID,
+    STORAGE_KEYS,
+} from "@/config/constants";
+import { SpotifyAuthTokens } from "@/types";
+import { secureStorage } from "@/utils/storage";
+import * as AuthSession from "expo-auth-session";
 
 const redirectUri = AuthSession.makeRedirectUri({
   scheme: "spotifyenhancer",

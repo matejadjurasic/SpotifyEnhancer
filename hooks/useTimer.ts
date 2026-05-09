@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
-import { RECORDING_CONFIG } from '../config/constants';
+import { RECORDING_CONFIG } from "@/config/constants";
+import { useEffect, useState } from "react";
 
-export const useTimer = (isActive: boolean, onMaxReached: () => void): number => {
+export const useTimer = (
+  isActive: boolean,
+  onMaxReached: () => void,
+): number => {
   const [seconds, setSeconds] = useState<number>(0);
 
   useEffect(() => {
@@ -9,7 +12,7 @@ export const useTimer = (isActive: boolean, onMaxReached: () => void): number =>
 
     if (isActive) {
       interval = setInterval(() => {
-        setSeconds(prev => {
+        setSeconds((prev) => {
           const next = prev + 1;
           if (next >= RECORDING_CONFIG.MAX_DURATION_SECONDS) {
             onMaxReached();

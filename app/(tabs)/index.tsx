@@ -1,6 +1,7 @@
 import { RecordButton } from "@/components/recording/RecordButton";
 import { RecordingInstruction } from "@/components/recording/RecordingInstruction";
 import { RecordingTimer } from "@/components/recording/RecordingTimer";
+import { SongConfirmModal } from "@/components/recording/SongConfirmModal";
 import { useAuth } from "@/context/AuthContext";
 import { useRecording } from "@/hooks/useRecording";
 import { useTimer } from "@/hooks/useTimer";
@@ -8,7 +9,6 @@ import { colors } from "@/styles/colors";
 import { commonStyles } from "@/styles/commonStyles";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SongConfirmModal } from "../songConfirmModal";
 
 export default function RecordingScreen() {
   const { spotifyToken, logout } = useAuth();
