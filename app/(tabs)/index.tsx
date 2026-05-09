@@ -1,14 +1,16 @@
 import { RecordButton } from "@/components/recording/RecordButton";
 import { RecordingInstruction } from "@/components/recording/RecordingInstruction";
 import { RecordingTimer } from "@/components/recording/RecordingTimer";
+import { SongConfirmModal } from "@/components/recording/SongConfirmModal";
+import { ScreenBackground } from "@/components/ui/ScreenBackground";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useRecording } from "@/hooks/useRecording";
 import { useTimer } from "@/hooks/useTimer";
-import { colors } from "@/styles/colors";
 import { commonStyles } from "@/styles/commonStyles";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SongConfirmModal } from "../songConfirmModal";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RecordingScreen() {
   const { spotifyToken, logout } = useAuth();
@@ -24,29 +26,29 @@ export default function RecordingScreen() {
   const seconds = useTimer(isRecording, stopRecording);
 
   return (
-    <View style={commonStyles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Ready to Record</Text>
-        <TouchableOpacity onPress={logout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={commonStyles.screenRoot}>
+      <ScreenBackground />
 
-      <View style={styles.content}>
-        <RecordingTimer seconds={seconds} />
+      <SafeAreaView style={commonStyles.screenSafeArea}>
+        <ScreenHeader subtitle="READY TO RECORD" onLogout={logout} />
 
-        <RecordButton
-          isRecording={isRecording}
-          isUploading={isUploading}
-          onPress={isRecording ? stopRecording : startRecording}
-          disabled={isUploading}
-        />
+        <View style={styles.content}>
+          <RecordingTimer seconds={seconds} />
 
-        <RecordingInstruction
-          isRecording={isRecording}
-          isUploading={isUploading}
-        />
-      </View>
+          <RecordButton
+            isRecording={isRecording}
+            isUploading={isUploading}
+            onPress={isRecording ? stopRecording : startRecording}
+            disabled={isUploading}
+          />
+
+          <RecordingInstruction
+            isRecording={isRecording}
+            isUploading={isUploading}
+          />
+        </View>
+      </SafeAreaView>
+
       {result && (
         <SongConfirmModal
           visible={showConfirm}
@@ -61,26 +63,9 @@ export default function RecordingScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    position: "absolute",
-    top: 60,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text,
-  },
-  logoutText: {
-    color: colors.primary,
-    fontSize: 16,
-  },
   content: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
 });

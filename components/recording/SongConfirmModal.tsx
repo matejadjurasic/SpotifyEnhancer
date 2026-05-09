@@ -1,14 +1,15 @@
+import { colors } from "@/styles/colors";
 import React from "react";
 import {
-  ImageBackground,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ImageBackground,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
-type Props = {
+interface SongConfirmModalProps {
   visible: boolean;
   data: {
     track: string;
@@ -16,22 +17,13 @@ type Props = {
     photoUrl?: string | null;
   };
   onConfirm: () => void;
-};
+}
 
-export const SongConfirmModal = ({ visible, data, onConfirm }: Props) => {
-  const content = (
-    <View style={styles.content}>
-      <Text style={styles.track}>{data.track}</Text>
-      <Text style={styles.artist}>{data.artist}</Text>
-
-      <View style={styles.buttons}>
-        <TouchableOpacity style={styles.confirm} onPress={onConfirm}>
-          <Text style={styles.btnText}>Confirm</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
+export const SongConfirmModal = ({
+  visible,
+  data,
+  onConfirm,
+}: SongConfirmModalProps) => {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
@@ -45,7 +37,21 @@ export const SongConfirmModal = ({ visible, data, onConfirm }: Props) => {
             />
           ) : null}
 
-          <View style={styles.content}>{content}</View>
+          <View style={styles.content}>
+            <Text style={styles.track}>{data.track}</Text>
+            <Text style={styles.artist}>{data.artist}</Text>
+
+            <View style={styles.buttons}>
+              <TouchableOpacity
+                style={styles.confirm}
+                onPress={onConfirm}
+                accessibilityLabel="Confirm song"
+                accessibilityRole="button"
+              >
+                <Text style={styles.btnText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
@@ -76,12 +82,12 @@ const styles = StyleSheet.create({
   track: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#fff",
+    color: colors.text,
     textAlign: "center",
   },
   artist: {
     fontSize: 18,
-    color: "#ccc",
+    color: colors.textSecondary,
     marginTop: 8,
     textAlign: "center",
   },
@@ -91,13 +97,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   confirm: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
     padding: 12,
     borderRadius: 8,
     width: 100,
   },
   btnText: {
-    color: "#fff",
+    color: colors.text,
     textAlign: "center",
     fontWeight: "600",
   },
