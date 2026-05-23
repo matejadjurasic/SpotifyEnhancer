@@ -1,4 +1,7 @@
-import { N8N_WEBHOOK_URL } from "@/config/constants";
+import {
+  N8N_TRANSCRIBE_WEBHOOK_URL,
+  N8N_WEBHOOK_URL,
+} from "@/config/constants";
 import type { UploadResponse } from "@/types";
 
 export const uploadService = {
@@ -28,5 +31,20 @@ export const uploadService = {
     }
 
     return await response.json();
+  },
+
+  async sendTranscript(
+    transcript: string,
+    spotifyToken: string,
+  ): Promise<void> {
+    const response = await fetch(N8N_TRANSCRIBE_WEBHOOK_URL!, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript, spotify_token: spotifyToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
   },
 };

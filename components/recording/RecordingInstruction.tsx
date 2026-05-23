@@ -1,3 +1,4 @@
+import { RECORDING_INSTRUCTION_STRINGS } from "@/constants/strings";
 import { colors } from "@/styles/colors";
 import React from "react";
 import { StyleSheet, Text } from "react-native";
@@ -12,9 +13,9 @@ export const RecordingInstruction: React.FC<RecordingInstructionProps> = ({
   isUploading,
 }) => {
   const getText = (): string => {
-    if (isUploading) return "Processing...";
-    if (isRecording) return "Recording... Tap to stop";
-    return "Tap to record audio (max 30s)";
+    if (isUploading) return RECORDING_INSTRUCTION_STRINGS.uploading;
+    if (isRecording) return RECORDING_INSTRUCTION_STRINGS.recording;
+    return RECORDING_INSTRUCTION_STRINGS.idle;
   };
 
   return <Text style={styles.instruction}>{getText()}</Text>;

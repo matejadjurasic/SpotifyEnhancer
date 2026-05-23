@@ -1,13 +1,14 @@
+import { colors } from "@/styles/colors";
 import React, { useEffect } from "react";
 import { Dimensions } from "react-native";
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withRepeat,
-    withSequence,
-    withTiming,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 const { width: SW, height: SH } = Dimensions.get("window");
@@ -25,7 +26,7 @@ interface OrbConfig {
 
 const ORBS: OrbConfig[] = [
   {
-    color: "rgba(29,185,84,0.13)",
+    color: colors.orbGreenPrimary,
     size: 360,
     left: SW * 0.88,
     top: SH * 0.1,
@@ -35,7 +36,7 @@ const ORBS: OrbConfig[] = [
     delay: 0,
   },
   {
-    color: "rgba(139,92,246,0.10)",
+    color: colors.orbPurple,
     size: 290,
     left: SW * 0.07,
     top: SH * 0.25,
@@ -45,7 +46,7 @@ const ORBS: OrbConfig[] = [
     delay: 1100,
   },
   {
-    color: "rgba(59,130,246,0.08)",
+    color: colors.orbBlue,
     size: 330,
     left: SW * 0.14,
     top: SH * 0.7,
@@ -55,7 +56,7 @@ const ORBS: OrbConfig[] = [
     delay: 550,
   },
   {
-    color: "rgba(29,185,84,0.07)",
+    color: colors.orbGreenSecondary,
     size: 210,
     left: SW * 0.8,
     top: SH * 0.62,
