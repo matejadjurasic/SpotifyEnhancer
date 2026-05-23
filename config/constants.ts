@@ -13,6 +13,10 @@ export const N8N_TRANSCRIBE_WEBHOOK_URL =
   Constants.expoConfig?.extra?.n8nTranscribeWebhookUrl ||
   process.env.EXPO_PUBLIC_N8N_TRANSCRIBE_WEBHOOK_URL;
 
+export const N8N_NEARBY_ARTISTS_WEBHOOK_URL =
+  Constants.expoConfig?.extra?.n8nNearbyArtistsWebhookUrl ||
+  process.env.EXPO_PUBLIC_N8N_NEARBY_ARTISTS_WEBHOOK_URL;
+
 export const DEEPGRAM_API_KEY =
   Constants.expoConfig?.extra?.deepgramApiKey ||
   process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY ||
