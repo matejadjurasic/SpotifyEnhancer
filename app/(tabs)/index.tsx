@@ -28,27 +28,23 @@ export default function RecordingScreen() {
   return (
     <View style={commonStyles.screenRoot}>
       <ScreenBackground />
-
       <SafeAreaView style={commonStyles.screenSafeArea}>
         <ScreenHeader subtitle="READY TO RECORD" onLogout={logout} />
 
         <View style={styles.content}>
           <RecordingTimer seconds={seconds} />
-
           <RecordButton
             isRecording={isRecording}
             isUploading={isUploading}
             onPress={isRecording ? stopRecording : startRecording}
             disabled={isUploading}
           />
-
           <RecordingInstruction
             isRecording={isRecording}
             isUploading={isUploading}
           />
         </View>
       </SafeAreaView>
-
       {result && (
         <SongConfirmModal
           visible={showConfirm}

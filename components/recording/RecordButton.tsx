@@ -1,3 +1,5 @@
+import { PulseRing } from "@/components/recording/PulseRing";
+import { SpinnerArc } from "@/components/recording/SpinnerArc";
 import { colors } from "@/styles/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
@@ -7,7 +9,6 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withRepeat,
   withSequence,
   withTiming,
@@ -22,81 +23,6 @@ export interface RecordButtonProps {
 }
 
 const BUTTON_SIZE = 128;
-const RECORD_COLOR = "#E91E63";
-
-// ─── Pulse ring ───────────────────────────────────────────────────────────────
-
-const PulseRing: React.FC<{
-  delay: number;
-  isActive: boolean;
-  color: string;
-}> = ({ delay, isActive, color }) => {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    if (isActive) {
-      scale.value = withDelay(
-        delay,
-        withRepeat(
-          withTiming(2.9, { duration: 1700, easing: Easing.out(Easing.ease) }),
-          -1,
-          false,
-        ),
-      );
-      opacity.value = withDelay(
-        delay,
-        withRepeat(
-          withSequence(
-            withTiming(0.55, { duration: 80 }),
-            withTiming(0, { duration: 1620, easing: Easing.out(Easing.ease) }),
-          ),
-          -1,
-          false,
-        ),
-      );
-    } else {
-      cancelAnimation(scale);
-      cancelAnimation(opacity);
-      scale.value = withTiming(1, { duration: 400 });
-      opacity.value = withTiming(0, { duration: 400 });
-    }
-  }, [isActive]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return <Animated.View style={[styles.ring, { borderColor: color }, style]} />;
-};
-
-// ─── Spinner arc ──────────────────────────────────────────────────────────────
-
-const SpinnerArc: React.FC = () => {
-  const rotation = useSharedValue(0);
-
-  useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(1, { duration: 1100, easing: Easing.linear }),
-      -1,
-      false,
-    );
-    return () => cancelAnimation(rotation);
-  }, []);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value * 360}deg` }],
-  }));
-
-  return (
-    <Animated.View style={[styles.spinnerWrap, style]}>
-      <View style={styles.spinnerArc} />
-    </Animated.View>
-  );
-};
-
-// ─── Main button ──────────────────────────────────────────────────────────────
 
 export const RecordButton: React.FC<RecordButtonProps> = ({
   isRecording,
@@ -107,14 +33,14 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
 }) => {
   const isLoading = isSending || isUploading;
   const borderColor = isLoading
-    ? "#333"
+    ? colors.recordButtonLoadingAccent
     : isRecording
-      ? RECORD_COLOR
+      ? colors.statusRecording
       : colors.primary;
   const glowColor = isLoading
-    ? "#333"
+    ? colors.recordButtonLoadingAccent
     : isRecording
-      ? RECORD_COLOR
+      ? colors.statusRecording
       : colors.primary;
 
   const breathe = useSharedValue(1);
@@ -143,26 +69,25 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Ripple rings – recording */}
       <PulseRing
         delay={0}
         isActive={isRecording && !isLoading}
-        color={colors.primary}
+        color={colors.statusRecording}
+        size={BUTTON_SIZE}
       />
       <PulseRing
         delay={567}
         isActive={isRecording && !isLoading}
-        color={colors.primary}
+        color={colors.statusRecording}
+        size={BUTTON_SIZE}
       />
       <PulseRing
         delay={1134}
         isActive={isRecording && !isLoading}
-        color={colors.primary}
+        color={colors.statusRecording}
+        size={BUTTON_SIZE}
       />
-
-      {/* Spinning arc – loading / sending */}
-      {isLoading && <SpinnerArc />}
-
+      {isLoading && <SpinnerArc size={BUTTON_SIZE} />}
       <Animated.View style={breatheStyle}>
         <TouchableOpacity
           style={[styles.button, { borderColor, shadowColor: glowColor }]}
@@ -178,15 +103,23 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
             ]}
           >
             {isLoading ? (
-              /* AI thinking state – musical notes in Spotify green (dimmed) */
-              <Ionicons name="musical-notes" size={40} color="#444" />
+              /* AI thinking state – musical notes (dimmed) */
+              <Ionicons
+                name="musical-notes"
+                size={40}
+                color={colors.recordButtonLoadingIcon}
+              />
             ) : isRecording ? (
               /* Stop icon in accent pink */
-              <Ionicons name="stop-circle" size={52} color={RECORD_COLOR} />
+              <Ionicons
+                name="stop-circle"
+                size={52}
+                color={colors.statusRecording}
+              />
             ) : (
               /* Idle – mic with green accent dot */
               <View style={styles.micWrap}>
-                <Ionicons name="mic" size={46} color="#fff" />
+                <Ionicons name="mic" size={46} color={colors.text} />
                 <View style={styles.greenDot} />
               </View>
             )}
@@ -204,34 +137,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  ring: {
-    position: "absolute",
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-    borderRadius: BUTTON_SIZE / 2,
-    borderWidth: 2,
-  },
-  spinnerWrap: {
-    position: "absolute",
-    width: BUTTON_SIZE + 22,
-    height: BUTTON_SIZE + 22,
-    borderRadius: (BUTTON_SIZE + 22) / 2,
-  },
-  spinnerArc: {
-    width: BUTTON_SIZE + 22,
-    height: BUTTON_SIZE + 22,
-    borderRadius: (BUTTON_SIZE + 22) / 2,
-    borderWidth: 3,
-    borderColor: "transparent",
-    borderTopColor: colors.primary,
-    borderRightColor: `${colors.primary}70`,
-    position: "absolute",
-  },
   button: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     borderRadius: BUTTON_SIZE / 2,
-    backgroundColor: "#0D1117",
+    backgroundColor: colors.recordButtonBackground,
     borderWidth: 2.5,
     justifyContent: "center",
     alignItems: "center",
@@ -244,15 +154,15 @@ const styles = StyleSheet.create({
     width: BUTTON_SIZE - 16,
     height: BUTTON_SIZE - 16,
     borderRadius: (BUTTON_SIZE - 16) / 2,
-    backgroundColor: "rgba(29,185,84,0.09)",
+    backgroundColor: colors.recordButtonInnerIdle,
     justifyContent: "center",
     alignItems: "center",
   },
   buttonInnerRecording: {
-    backgroundColor: "rgba(233,30,99,0.10)",
+    backgroundColor: colors.recordButtonInnerRecording,
   },
   buttonInnerLoading: {
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: colors.recordButtonInnerLoading,
   },
   micWrap: {
     justifyContent: "center",
@@ -267,6 +177,6 @@ const styles = StyleSheet.create({
     borderRadius: 5.5,
     backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: "#0D1117",
+    borderColor: colors.recordButtonBackground,
   },
 });

@@ -1,3 +1,4 @@
+import { SCREEN_HEADER_STRINGS } from "@/constants/strings";
 import { colors } from "@/styles/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
@@ -15,19 +16,19 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   <View style={styles.header}>
     <View style={styles.left}>
       <View style={styles.logoMark}>
-        <Ionicons name="musical-notes" size={20} color="#fff" />
+        <Ionicons name="musical-notes" size={20} color={colors.text} />
       </View>
       <View style={styles.textCol}>
-        <Text style={styles.title}>Spotify AI</Text>
+        <Text style={styles.title}>{SCREEN_HEADER_STRINGS.title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
     </View>
     <TouchableOpacity
       onPress={onLogout}
-      accessibilityLabel="Logout"
+      accessibilityLabel={SCREEN_HEADER_STRINGS.logoutLabel}
       accessibilityRole="button"
     >
-      <Text style={styles.logoutText}>Logout</Text>
+      <Text style={styles.logoutText}>{SCREEN_HEADER_STRINGS.logoutLabel}</Text>
     </TouchableOpacity>
   </View>
 );

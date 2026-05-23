@@ -1,3 +1,4 @@
+import { LOGIN_CARD_STRINGS } from "@/constants/strings";
 import { colors } from "@/styles/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
@@ -11,46 +12,35 @@ interface LoginCardProps {
 export const LoginCard: React.FC<LoginCardProps> = ({ onLogin, disabled }) => {
   return (
     <View style={styles.container}>
-      {/* Logo mark */}
       <View style={styles.logoWrap}>
         <View style={styles.logoMark}>
-          <Ionicons name="musical-notes" size={36} color="#fff" />
+          <Ionicons
+            name="musical-notes"
+            size={36}
+            color={colors.loginCardIcon}
+          />
         </View>
       </View>
-
-      {/* Wordmark */}
-      <Text style={styles.title}>Spotify AI</Text>
-      <Text style={styles.subtitle}>VOICE ASSISTANT</Text>
-
-      {/* Description */}
-      <Text style={styles.description}>
-        Connect your Spotify account to unlock AI-powered music control with
-        your voice.
-      </Text>
-
-      {/* Divider */}
+      <Text style={styles.title}>{LOGIN_CARD_STRINGS.title}</Text>
+      <Text style={styles.subtitle}>{LOGIN_CARD_STRINGS.subtitle}</Text>
+      <Text style={styles.description}>{LOGIN_CARD_STRINGS.description}</Text>
       <View style={styles.divider} />
-
-      {/* CTA button */}
       <TouchableOpacity
         style={[styles.button, disabled && styles.buttonDisabled]}
         onPress={onLogin}
         disabled={disabled}
-        accessibilityLabel="Connect with Spotify"
+        accessibilityLabel={LOGIN_CARD_STRINGS.buttonAccessibilityLabel}
         accessibilityRole="button"
       >
         <Ionicons
           name="logo-google-playstore"
           size={18}
-          color="#000"
+          color={colors.loginCardButtonText}
           style={styles.buttonIcon}
         />
-        <Text style={styles.buttonText}>Continue with Spotify</Text>
+        <Text style={styles.buttonText}>{LOGIN_CARD_STRINGS.buttonLabel}</Text>
       </TouchableOpacity>
-
-      <Text style={styles.legal}>
-        By continuing you agree to Spotify's Terms of Service.
-      </Text>
+      <Text style={styles.legal}>{LOGIN_CARD_STRINGS.legal}</Text>
     </View>
   );
 };
@@ -63,8 +53,6 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 8,
   },
-
-  // Logo
   logoWrap: {
     marginBottom: 28,
   },
@@ -81,8 +69,6 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 14,
   },
-
-  // Wordmark
   title: {
     fontSize: 36,
     fontWeight: "800",
@@ -97,8 +83,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 32,
   },
-
-  // Description
   description: {
     fontSize: 15,
     color: colors.textSecondary,
@@ -107,16 +91,12 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     paddingHorizontal: 12,
   },
-
-  // Divider
   divider: {
     width: "100%",
     height: 1,
-    backgroundColor: "rgba(29,185,84,0.18)",
+    backgroundColor: colors.loginCardDivider,
     marginBottom: 32,
   },
-
-  // Button
   button: {
     flexDirection: "row",
     alignItems: "center",
@@ -139,13 +119,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   buttonText: {
-    color: "#000",
+    color: colors.loginCardButtonText,
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: 0.3,
   },
-
-  // Legal
   legal: {
     marginTop: 20,
     fontSize: 11,
