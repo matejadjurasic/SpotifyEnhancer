@@ -5,6 +5,8 @@ export interface DeviceLocation {
   countryCode: string;
   city: string | null;
   region: string | null;
+  latitude: number;
+  longitude: number;
 }
 
 export const locationService = {
@@ -37,6 +39,8 @@ export const locationService = {
       countryCode: geocode.isoCountryCode ?? "",
       city: geocode.city ?? null,
       region: geocode.region ?? null,
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
     };
   },
 };

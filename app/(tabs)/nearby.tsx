@@ -1,3 +1,4 @@
+import { DiscoveryMapModal } from "@/components/map/DiscoveryMapModal";
 import { ScreenBackground } from "@/components/ui/ScreenBackground";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { NEARBY_ARTISTS_STRINGS } from "@/constants/strings";
@@ -97,6 +98,13 @@ export default function NearbyArtistsScreen() {
   const [detectedCountryCode, setDetectedCountryCode] = useState<string>("");
   const [detectedCity, setDetectedCity] = useState<string | null>(null);
   const [artists, setArtists] = useState<NearbyArtist[]>([]);
+  const [userLatitude, setUserLatitude] = useState<number | undefined>(
+    undefined,
+  );
+  const [userLongitude, setUserLongitude] = useState<number | undefined>(
+    undefined,
+  );
+  const [mapVisible, setMapVisible] = useState(false);
 
   useEffect(() => {
     locationService.getPermissionStatus().then(setPermissionStatus);
@@ -129,6 +137,8 @@ export default function NearbyArtistsScreen() {
       setDetectedCountry(location.country);
       setDetectedCountryCode(location.countryCode);
       setDetectedCity(location.city);
+      setUserLatitude(location.latitude);
+      setUserLongitude(location.longitude);
       setScreenState("idle");
     } catch {
       setScreenState("error");
@@ -309,6 +319,21 @@ export default function NearbyArtistsScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Open Map button */}
+        <TouchableOpacity
+          style={styles.mapButton}
+          onPress={() => setMapVisible(true)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="map-outline" size={18} color={colors.primary} />
+          <Text style={styles.mapButtonText}>Open Discovery Map</Text>
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+
         {/* Results */}
         {screenState === "results" && (
           <View style={styles.resultsContainer}>
@@ -330,6 +355,13 @@ export default function NearbyArtistsScreen() {
           </View>
         )}
       </SafeAreaView>
+
+      <DiscoveryMapModal
+        visible={mapVisible}
+        onClose={() => setMapVisible(false)}
+        initialLatitude={userLatitude}
+        initialLongitude={userLongitude}
+      />
     </View>
   );
 }
@@ -405,6 +437,25 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.loginCardButtonText,
     letterSpacing: 0.4,
+  },
+  mapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "stretch",
+    gap: 10,
+    backgroundColor: "rgba(29,185,84,0.07)",
+    borderWidth: 1,
+    borderColor: "rgba(29,185,84,0.2)",
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    marginBottom: 20,
+  },
+  mapButtonText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
   },
   resultsContainer: {
     flex: 1,

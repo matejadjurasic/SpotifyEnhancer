@@ -48,6 +48,26 @@ export interface NearbyArtistsResponse {
   location?: string;
 }
 
+export interface CityMarker {
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface MapArtist {
+  id: string;
+  name: string;
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  spotifyId: string;
+  genres: string[];
+  imageUrl: string | null;
+  popularity: number;
+}
+
 export interface AuthHookReturn {
   isAuthenticated: boolean;
   spotifyToken: string | null;
