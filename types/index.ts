@@ -1,9 +1,71 @@
 import { Audio } from "expo-av";
 
+export interface TranscriptionCallbacks {
+  onFinalTranscript: (transcript: string) => void;
+  onInterimTranscript: (transcript: string) => void;
+  onConnected: () => void;
+  onDisconnected: () => void;
+  onError: (message: string) => void;
+  onSpeechFinal: (transcript: string) => void;
+}
+
+export interface TranscriptionProvider {
+  connect(callbacks: TranscriptionCallbacks): void;
+  sendChunk(chunk: string): void;
+  close(): Promise<void>;
+}
+
+export type TranscriptionProviderFactory = () => TranscriptionProvider;
+
+export interface TranscriptionHook {
+  isRecording: boolean;
+  isConnecting: boolean;
+  finalTranscript: string;
+  interimTranscript: string;
+  startTranscription: () => Promise<void>;
+  stopTranscription: () => Promise<string>;
+  clearTranscript: () => void;
+  error: string | null;
+  clearError: () => void;
+}
+
 export interface UploadResponse {
   track: string;
   artist: string;
   photoUrl?: string | null;
+}
+
+export interface NearbyArtist {
+  name: string;
+  genres?: string[];
+  imageUrl?: string | null;
+  popularity?: number;
+  spotifyUrl?: string | null;
+}
+
+export interface NearbyArtistsResponse {
+  artists: NearbyArtist[];
+  location?: string;
+}
+
+export interface CityMarker {
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface MapArtist {
+  id: string;
+  name: string;
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  spotifyId: string;
+  genres: string[];
+  imageUrl: string | null;
+  popularity: number;
 }
 
 export interface AuthHookReturn {

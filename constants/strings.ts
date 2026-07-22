@@ -31,3 +31,19 @@ export const TRANSCRIBE_STRINGS = {
   errorTitle: "Error",
   errorSendPrefix: "Failed to send transcript: ",
 };
+
+export const NEARBY_ARTISTS_STRINGS = {
+  screenSubtitle: "NEARBY ARTISTS",
+  detectingLocation: "Detecting your location…",
+  locationDetected: "Artists trending in",
+  searchButton: "Find Artists",
+  searchingArtists: "Searching artists…",
+  noResults: "No artists found for this location.",
+  retryLocation: "Retry Location",
+  permissionDenied: "Location access is required to find artists near you.",
+  enableLocation: "Enable Location",
+  errorTitle: "Error",
+  errorLocation: "Could not determine your location.",
+  errorSearch: "Failed to search for artists: ",
+  flagLabel: "Location flag",
+};

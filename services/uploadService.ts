@@ -1,8 +1,9 @@
 import {
+  N8N_NEARBY_ARTISTS_WEBHOOK_URL,
   N8N_TRANSCRIBE_WEBHOOK_URL,
   N8N_WEBHOOK_URL,
 } from "@/config/constants";
-import type { UploadResponse } from "@/types";
+import type { NearbyArtistsResponse, UploadResponse } from "@/types";
 
 export const uploadService = {
   async uploadAudio(
@@ -46,5 +47,29 @@ export const uploadService = {
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
+  },
+
+  async searchNearbyArtists(
+    country: string,
+    countryCode: string,
+    city: string | null,
+    spotifyToken: string,
+  ): Promise<NearbyArtistsResponse> {
+    const response = await fetch(N8N_NEARBY_ARTISTS_WEBHOOK_URL!, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        country,
+        country_code: countryCode,
+        city,
+        spotify_token: spotifyToken,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+
+    return await response.json();
   },
 };

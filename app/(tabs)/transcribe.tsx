@@ -6,10 +6,11 @@ import { StatusRow } from "@/components/ui/StatusRow";
 import { TRANSCRIBE_STRINGS } from "@/constants/strings";
 import { useAuth } from "@/context/AuthContext";
 import { useDeepgramTranscription } from "@/hooks/useDeepgramTranscription";
+import { createDeepgramTranscriptionProvider } from "@/services/deepgramTranscriptionProvider";
 import { uploadService } from "@/services/uploadService";
 import { colors } from "@/styles/colors";
 import { commonStyles } from "@/styles/commonStyles";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,22 +20,43 @@ export default function TranscribeScreen() {
 
   const {
     isRecording,
+    isConnecting,
     finalTranscript,
     interimTranscript,
     startTranscription,
     stopTranscription,
     clearTranscript,
-  } = useDeepgramTranscription();
+    error,
+    clearError,
+  } = useDeepgramTranscription(createDeepgramTranscriptionProvider, {
+    onAutoSend: (transcript) => {
+      sendToN8n(transcript);
+    },
+  });
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert("Transcription error", error);
+      clearError();
+    }
+  }, [error]);
 
   const handlePress = async () => {
-    if (isRecording) {
-      const transcript = await stopTranscription();
-      if (transcript) {
-        await sendToN8n(transcript);
+    try {
+      if (isRecording) {
+        const transcript = await stopTranscription();
+        if (transcript) {
+          await sendToN8n(transcript);
+        }
+      } else {
+        clearTranscript();
+        await startTranscription();
       }
-    } else {
-      clearTranscript();
-      await startTranscription();
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        (error as Error).message ?? "An unexpected error occurred.",
+      );
     }
   };
 
@@ -69,7 +91,7 @@ export default function TranscribeScreen() {
         <View style={styles.buttonWrap}>
           <RecordButton
             isRecording={isRecording}
-            isUploading={false}
+            isUploading={isConnecting || false}
             isSending={isSending}
             onPress={handlePress}
             disabled={false}
