@@ -7,11 +7,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 interface ScreenHeaderProps {
   subtitle: string;
   onLogout: () => void;
+  onProfile?: () => void;
 }
 
 export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   subtitle,
   onLogout,
+  onProfile,
 }) => (
   <View style={styles.header}>
     <View style={styles.left}>
@@ -23,13 +25,27 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
     </View>
-    <TouchableOpacity
-      onPress={onLogout}
-      accessibilityLabel={SCREEN_HEADER_STRINGS.logoutLabel}
-      accessibilityRole="button"
-    >
-      <Text style={styles.logoutText}>{SCREEN_HEADER_STRINGS.logoutLabel}</Text>
-    </TouchableOpacity>
+    <View style={styles.actions}>
+      {onProfile && (
+        <TouchableOpacity
+          onPress={onProfile}
+          accessibilityLabel="Profile"
+          accessibilityRole="button"
+          style={styles.profileButton}
+        >
+          <Ionicons name="person" size={18} color={colors.text} />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        onPress={onLogout}
+        accessibilityLabel={SCREEN_HEADER_STRINGS.logoutLabel}
+        accessibilityRole="button"
+      >
+        <Text style={styles.logoutText}>
+          {SCREEN_HEADER_STRINGS.logoutLabel}
+        </Text>
+      </TouchableOpacity>
+    </View>
   </View>
 );
 
@@ -74,6 +90,21 @@ const styles = StyleSheet.create({
     letterSpacing: 1.8,
     textTransform: "uppercase",
     fontWeight: "600",
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  profileButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(29,185,84,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoutText: {
     color: colors.primary,

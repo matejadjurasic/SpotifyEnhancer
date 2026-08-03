@@ -25,6 +25,10 @@ export const N8N_ARTISTS_BY_CITY_WEBHOOK_URL =
   Constants.expoConfig?.extra?.n8nArtistsByCityWebhookUrl ||
   process.env.EXPO_PUBLIC_N8N_ARTISTS_BY_CITY_WEBHOOK_URL;
 
+export const N8N_PROFILE_WEBHOOK_URL =
+  Constants.expoConfig?.extra?.n8nProfileWebhookUrl ||
+  process.env.EXPO_PUBLIC_N8N_PROFILE_WEBHOOK_URL;
+
 export const DEEPGRAM_API_KEY =
   Constants.expoConfig?.extra?.deepgramApiKey ||
   process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY ||

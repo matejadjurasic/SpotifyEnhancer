@@ -1,8 +1,8 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
@@ -18,11 +18,13 @@ function RootLayoutNav() {
       return;
     }
 
-    const inAuthGroup = segments[0] === "(tabs)";
+    // Routes that require authentication
+    const protectedRoutes = ["(tabs)", "profile"];
+    const isProtected = protectedRoutes.includes(segments[0] as string);
 
-    if (!isAuthenticated && inAuthGroup) {
+    if (!isAuthenticated && isProtected) {
       router.replace("/auth");
-    } else if (isAuthenticated && !inAuthGroup) {
+    } else if (isAuthenticated && !isProtected && segments[0] !== "callback") {
       router.replace("/(tabs)");
     }
   }, [isAuthenticated, segments, isLoading]);
@@ -32,6 +34,7 @@ function RootLayoutNav() {
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="callback" options={{ headerShown: false }} />
+      <Stack.Screen name="profile" options={{ headerShown: false }} />
     </Stack>
   );
 }

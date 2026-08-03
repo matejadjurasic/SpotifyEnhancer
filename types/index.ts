@@ -55,6 +55,33 @@ export interface CityMarker {
   longitude: number;
 }
 
+export interface ProfileExecution {
+  total_cost: number;
+  workflow_name: string;
+  created_at: string;
+}
+
+export interface ProfileResponse {
+  name: string;
+  balance: number;
+  executions: ProfileExecution[];
+}
+
+export interface AssistantAction {
+  action_type: string;
+  target: string;
+  status: "SUCCESS" | "FAILED";
+  details: string;
+}
+
+export interface AssistantResponse {
+  requested_actions: number;
+  successful_actions: number;
+  failed_actions: number;
+  actions: AssistantAction[];
+  message: string;
+}
+
 export interface MapArtist {
   id: string;
   name: string;

@@ -1,3 +1,4 @@
+import { AssistantResultModal } from "@/components/recording/AssistantResultModal";
 import { RecordButton } from "@/components/recording/RecordButton";
 import { TranscriptCard } from "@/components/recording/TranscriptCard";
 import { ScreenBackground } from "@/components/ui/ScreenBackground";
@@ -10,13 +11,18 @@ import { createDeepgramTranscriptionProvider } from "@/services/deepgramTranscri
 import { uploadService } from "@/services/uploadService";
 import { colors } from "@/styles/colors";
 import { commonStyles } from "@/styles/commonStyles";
+import type { AssistantResponse } from "@/types";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TranscribeScreen() {
   const { spotifyToken, logout } = useAuth();
+  const router = useRouter();
   const [isSending, setIsSending] = useState(false);
+  const [assistantResult, setAssistantResult] =
+    useState<AssistantResponse | null>(null);
 
   const {
     isRecording,
@@ -63,7 +69,8 @@ export default function TranscribeScreen() {
   const sendToN8n = async (text: string) => {
     setIsSending(true);
     try {
-      await uploadService.sendTranscript(text, spotifyToken!);
+      const result = await uploadService.sendTranscript(text, spotifyToken!);
+      setAssistantResult(result);
     } catch (error) {
       Alert.alert(
         TRANSCRIBE_STRINGS.errorTitle,
@@ -81,6 +88,7 @@ export default function TranscribeScreen() {
         <ScreenHeader
           subtitle={TRANSCRIBE_STRINGS.screenSubtitle}
           onLogout={logout}
+          onProfile={() => router.push("/profile")}
         />
         <TranscriptCard
           finalTranscript={finalTranscript}
@@ -105,6 +113,13 @@ export default function TranscribeScreen() {
           </Text>
         ) : null}
       </SafeAreaView>
+      {assistantResult && (
+        <AssistantResultModal
+          visible={true}
+          data={assistantResult}
+          onClose={() => setAssistantResult(null)}
+        />
+      )}
     </View>
   );
 }
