@@ -8,12 +8,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useRecording } from "@/hooks/useRecording";
 import { useTimer } from "@/hooks/useTimer";
 import { commonStyles } from "@/styles/commonStyles";
+import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RecordingScreen() {
   const { spotifyToken, logout } = useAuth();
+  const router = useRouter();
   const {
     isRecording,
     isUploading,
@@ -29,7 +31,11 @@ export default function RecordingScreen() {
     <View style={commonStyles.screenRoot}>
       <ScreenBackground />
       <SafeAreaView style={commonStyles.screenSafeArea}>
-        <ScreenHeader subtitle="READY TO RECORD" onLogout={logout} />
+        <ScreenHeader
+          subtitle="READY TO RECORD"
+          onLogout={logout}
+          onProfile={() => router.push("/profile")}
+        />
 
         <View style={styles.content}>
           <RecordingTimer seconds={seconds} />

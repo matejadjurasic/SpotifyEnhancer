@@ -10,17 +10,18 @@ import { commonStyles } from "@/styles/commonStyles";
 import type { NearbyArtist } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Linking,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -91,6 +92,7 @@ function ArtistCard({ artist, index }: ArtistCardProps) {
 
 export default function NearbyArtistsScreen() {
   const { spotifyToken, logout } = useAuth();
+  const router = useRouter();
   const [screenState, setScreenState] = useState<ScreenState>("idle");
   const [permissionStatus, setPermissionStatus] =
     useState<Location.PermissionStatus | null>(null);
@@ -199,6 +201,7 @@ export default function NearbyArtistsScreen() {
         <ScreenHeader
           subtitle={NEARBY_ARTISTS_STRINGS.screenSubtitle}
           onLogout={logout}
+          onProfile={() => router.push("/profile")}
         />
 
         {/* Location status card */}
