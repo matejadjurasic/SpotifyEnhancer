@@ -29,6 +29,14 @@ export const N8N_PROFILE_WEBHOOK_URL =
   Constants.expoConfig?.extra?.n8nProfileWebhookUrl ||
   process.env.EXPO_PUBLIC_N8N_PROFILE_WEBHOOK_URL;
 
+export const N8N_RADIO_CREATE_WEBHOOK_URL =
+  Constants.expoConfig?.extra?.n8nRadioCreateWebhookUrl ||
+  process.env.EXPO_PUBLIC_N8N_RADIO_CREATE_WEBHOOK_URL;
+
+export const N8N_RADIO_LIST_WEBHOOK_URL =
+  Constants.expoConfig?.extra?.n8nRadioListWebhookUrl ||
+  process.env.EXPO_PUBLIC_N8N_RADIO_LIST_WEBHOOK_URL;
+
 export const DEEPGRAM_API_KEY =
   Constants.expoConfig?.extra?.deepgramApiKey ||
   process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY ||

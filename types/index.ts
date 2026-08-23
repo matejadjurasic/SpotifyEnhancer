@@ -48,6 +48,16 @@ export interface NearbyArtistsResponse {
   location?: string;
 }
 
+export interface RadioPlaylist {
+  id: string;
+  spotify_id: string;
+  created_at: string;
+  status: string;
+  spotify_playlist_id: string;
+  message: string | null;
+  name: string;
+}
+
 export interface CityMarker {
   city: string;
   country: string;

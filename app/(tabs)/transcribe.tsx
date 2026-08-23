@@ -1,6 +1,7 @@
 import { AssistantResultModal } from "@/components/recording/AssistantResultModal";
 import { RecordButton } from "@/components/recording/RecordButton";
 import { TranscriptCard } from "@/components/recording/TranscriptCard";
+import { ErrorModal } from "@/components/ui/ErrorModal";
 import { ScreenBackground } from "@/components/ui/ScreenBackground";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { StatusRow } from "@/components/ui/StatusRow";
@@ -23,6 +24,7 @@ export default function TranscribeScreen() {
   const [isSending, setIsSending] = useState(false);
   const [assistantResult, setAssistantResult] =
     useState<AssistantResponse | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const {
     isRecording,
@@ -72,10 +74,7 @@ export default function TranscribeScreen() {
       const result = await uploadService.sendTranscript(text, spotifyToken!);
       setAssistantResult(result);
     } catch (error) {
-      Alert.alert(
-        TRANSCRIBE_STRINGS.errorTitle,
-        `${TRANSCRIBE_STRINGS.errorSendPrefix}${(error as Error).message}`,
-      );
+      setSendError((error as Error).message ?? "An unexpected error occurred.");
     } finally {
       setIsSending(false);
     }
@@ -120,6 +119,11 @@ export default function TranscribeScreen() {
           onClose={() => setAssistantResult(null)}
         />
       )}
+      <ErrorModal
+        visible={!!sendError}
+        message={sendError ?? ""}
+        onClose={() => setSendError(null)}
+      />
     </View>
   );
 }

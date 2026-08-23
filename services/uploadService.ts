@@ -1,6 +1,8 @@
 import {
   N8N_NEARBY_ARTISTS_WEBHOOK_URL,
   N8N_PROFILE_WEBHOOK_URL,
+  N8N_RADIO_CREATE_WEBHOOK_URL,
+  N8N_RADIO_LIST_WEBHOOK_URL,
   N8N_TRANSCRIBE_WEBHOOK_URL,
   N8N_WEBHOOK_URL,
 } from "@/config/constants";
@@ -8,6 +10,7 @@ import type {
   AssistantResponse,
   NearbyArtistsResponse,
   ProfileResponse,
+  RadioPlaylist,
   UploadResponse,
 } from "@/types";
 
@@ -51,7 +54,13 @@ export const uploadService = {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
+      let message = `Unexpected error (status ${response.status})`;
+      try {
+        const body = await response.json();
+        if (body.error) message = body.error;
+        else if (body.message) message = body.message;
+      } catch {}
+      throw new Error(message);
     }
 
     const json = await response.json();
@@ -99,5 +108,38 @@ export const uploadService = {
     }
 
     return await response.json();
+  },
+
+  async createRadioPlaylist(
+    spotifyToken: string,
+    city: string,
+  ): Promise<RadioPlaylist> {
+    const response = await fetch(N8N_RADIO_CREATE_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ spotify_token: spotifyToken, city }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+
+    const json = await response.json();
+    return Array.isArray(json) ? json[0] : json;
+  },
+
+  async getRadioPlaylists(spotifyToken: string): Promise<RadioPlaylist[]> {
+    const response = await fetch(N8N_RADIO_LIST_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ spotify_token: spotifyToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+
+    const json = await response.json();
+    return Array.isArray(json) ? json : [];
   },
 };
