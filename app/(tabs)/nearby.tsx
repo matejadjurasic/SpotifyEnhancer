@@ -7,7 +7,7 @@ import { locationService } from "@/services/locationService";
 import { uploadService } from "@/services/uploadService";
 import { colors } from "@/styles/colors";
 import { commonStyles } from "@/styles/commonStyles";
-import type { NearbyArtist } from "@/types";
+import type { NearbyArtist, RadioPlaylist } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
@@ -18,6 +18,7 @@ import {
   FlatList,
   Linking,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -90,6 +91,81 @@ function ArtistCard({ artist, index }: ArtistCardProps) {
   );
 }
 
+function statusColor(status: string): string {
+  switch (status.toUpperCase()) {
+    case "CREATED":
+      return colors.primary;
+    case "FAILED":
+      return colors.danger;
+    default:
+      return "#f5a623";
+  }
+}
+
+interface RadioPlaylistCardProps {
+  playlist: RadioPlaylist;
+  onPlay: (spotifyPlaylistId: string) => void;
+  isPlaying: boolean;
+}
+
+function RadioPlaylistCard({
+  playlist,
+  onPlay,
+  isPlaying,
+}: RadioPlaylistCardProps) {
+  const canPlay =
+    playlist.status.toUpperCase() === "CREATED" &&
+    !!playlist.spotify_playlist_id;
+  return (
+    <View style={styles.radioCard}>
+      <View style={styles.radioCardContent}>
+        <View
+          style={[
+            styles.radioStatusDot,
+            { backgroundColor: statusColor(playlist.status) },
+          ]}
+        />
+        <View style={styles.radioCardInfo}>
+          <Text style={styles.radioCardName} numberOfLines={1}>
+            {playlist.name}
+          </Text>
+          <View style={styles.radioCardMeta}>
+            <Text
+              style={[
+                styles.radioStatusBadge,
+                { color: statusColor(playlist.status) },
+              ]}
+            >
+              {playlist.status}
+            </Text>
+            {playlist.message ? (
+              <Text style={styles.radioCardMessage} numberOfLines={2}>
+                {playlist.message}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </View>
+      <TouchableOpacity
+        style={[styles.radioPlayBtn, !canPlay && styles.radioPlayBtnDisabled]}
+        onPress={() => canPlay && onPlay(playlist.spotify_playlist_id)}
+        disabled={!canPlay || isPlaying}
+        activeOpacity={canPlay ? 0.7 : 1}
+      >
+        {isPlaying && canPlay ? (
+          <ActivityIndicator size="small" color={colors.loginCardButtonText} />
+        ) : (
+          <Ionicons
+            name="play"
+            size={16}
+            color={canPlay ? colors.loginCardButtonText : colors.textSecondary}
+          />
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 export default function NearbyArtistsScreen() {
   const { spotifyToken, logout } = useAuth();
   const router = useRouter();
@@ -107,6 +183,12 @@ export default function NearbyArtistsScreen() {
     undefined,
   );
   const [mapVisible, setMapVisible] = useState(false);
+  const [radioPlaylists, setRadioPlaylists] = useState<RadioPlaylist[]>([]);
+  const [radioLoading, setRadioLoading] = useState(false);
+  const [creatingRadio, setCreatingRadio] = useState(false);
+  const [playingPlaylistId, setPlayingPlaylistId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     locationService.getPermissionStatus().then(setPermissionStatus);
@@ -151,6 +233,32 @@ export default function NearbyArtistsScreen() {
     }
   }, []);
 
+  const CITY_TRANSLATIONS: Record<string, string> = {
+    Београд: "Belgrade",
+    Ниш: "Nis",
+    Крагујевац: "Kragujevac",
+    "Нови Сад": "Novi Sad",
+    Суботица: "Subotica",
+    Зрењанин: "Zrenjanin",
+    Панчево: "Pancevo",
+    Чачак: "Cacak",
+    Краљево: "Kraljevo",
+    Смедерево: "Smederevo",
+    Лесковац: "Leskovac",
+    Ужице: "Uzice",
+    Ваљево: "Valjevo",
+    Врање: "Vranje",
+    Шабац: "Sabac",
+  };
+
+  const normalizeCityName = (city: string | null): string | null => {
+    if (!city) {
+      return null;
+    }
+
+    return CITY_TRANSLATIONS[city] ?? city;
+  };
+
   const searchArtists = useCallback(async () => {
     if (!detectedCountry || !spotifyToken) return;
     setScreenState("searching");
@@ -172,6 +280,114 @@ export default function NearbyArtistsScreen() {
       );
     }
   }, [detectedCountry, detectedCountryCode, detectedCity, spotifyToken]);
+
+  const fetchRadioPlaylists = useCallback(async () => {
+    if (!spotifyToken) return;
+    setRadioLoading(true);
+    try {
+      const playlists = await uploadService.getRadioPlaylists(spotifyToken);
+      setRadioPlaylists(playlists);
+    } catch {
+      // silent — section will just remain empty
+    } finally {
+      setRadioLoading(false);
+    }
+  }, [spotifyToken]);
+
+  useEffect(() => {
+    fetchRadioPlaylists();
+  }, [fetchRadioPlaylists]);
+
+  const getEnglishCityName = async (
+    lat: number,
+    lon: number,
+  ): Promise<string | null> => {
+    try {
+      /*
+      // zoom=10 resolves to city level; `name` is the matched entity (e.g. "Belgrade")
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=en&zoom=10`,
+        { headers: { "User-Agent": "spotify-enhancer-app" } },
+      );
+      const data = await res.json();
+      const city =
+        data?.address?.city &&
+        !/(urban municipality|municipality|district)/i.test(data.address.city)
+          ? data.address.city
+          : null;
+      const county = data?.address?.county
+        ?.replace(/^city of /i, "")
+        .replace(/^municipality of /i, "");
+      return (
+        data?.name ||
+        city ||
+        data?.address?.town ||
+        data?.address?.village ||
+        county ||
+        null
+      );*/
+      return normalizeCityName(detectedCity);
+    } catch {
+      return null;
+    }
+  };
+
+  const createLocalRadioPlaylist = useCallback(async () => {
+    if (
+      !spotifyToken ||
+      !detectedCity ||
+      userLatitude == null ||
+      userLongitude == null
+    )
+      return;
+    setCreatingRadio(true);
+    try {
+      const englishCity =
+        (await getEnglishCityName(userLatitude, userLongitude)) ?? detectedCity;
+      const playlist = await uploadService.createRadioPlaylist(
+        spotifyToken,
+        englishCity,
+      );
+      setRadioPlaylists((prev) => [playlist, ...prev]);
+    } catch {
+      Alert.alert(
+        "Error",
+        "Failed to create radio playlist. Please try again.",
+      );
+    } finally {
+      setCreatingRadio(false);
+    }
+  }, [spotifyToken, detectedCity, userLatitude, userLongitude]);
+
+  const playPlaylist = useCallback(
+    async (spotifyPlaylistId: string) => {
+      if (!spotifyToken) return;
+      setPlayingPlaylistId(spotifyPlaylistId);
+      try {
+        const res = await fetch("https://api.spotify.com/v1/me/player/play", {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${spotifyToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            context_uri: `spotify:playlist:${spotifyPlaylistId}`,
+          }),
+        });
+        if (!res.ok && res.status !== 204) {
+          throw new Error(`status ${res.status}`);
+        }
+      } catch {
+        Alert.alert(
+          "Playback Error",
+          "Could not start playback. Make sure Spotify is open and active on a device.",
+        );
+      } finally {
+        setPlayingPlaylistId(null);
+      }
+    },
+    [spotifyToken],
+  );
 
   const openAppSettings = () => {
     if (Platform.OS === "ios") {
@@ -197,166 +413,219 @@ export default function NearbyArtistsScreen() {
   return (
     <View style={commonStyles.screenRoot}>
       <ScreenBackground />
-      <SafeAreaView style={commonStyles.screenSafeArea}>
-        <ScreenHeader
-          subtitle={NEARBY_ARTISTS_STRINGS.screenSubtitle}
-          onLogout={logout}
-          onProfile={() => router.push("/profile")}
-        />
-
-        {/* Location status card */}
-        <View style={styles.locationCard}>
-          {isLoading && screenState !== "searching" ? (
-            <>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={styles.locationStatusText}>
-                {NEARBY_ARTISTS_STRINGS.detectingLocation}
-              </Text>
-            </>
-          ) : detectedCountry ? (
-            <>
-              <Text style={styles.flagText}>{flag}</Text>
-              <View style={styles.locationTextCol}>
-                <Text style={styles.locationFoundLabel}>
-                  {NEARBY_ARTISTS_STRINGS.locationDetected}
-                </Text>
-                <Text style={styles.locationName}>{locationLabel}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={locate}
-                style={styles.refreshBtn}
-                disabled={isLoading}
-              >
-                <Ionicons name="refresh" size={18} color={colors.primary} />
-              </TouchableOpacity>
-            </>
-          ) : permissionStatus === Location.PermissionStatus.DENIED ? (
-            <>
-              <Ionicons
-                name="location-outline"
-                size={22}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.permissionText}>
-                {NEARBY_ARTISTS_STRINGS.permissionDenied}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Ionicons
-                name="location-outline"
-                size={22}
-                color={colors.primary}
-              />
-              <Text style={styles.locationStatusText}>
-                Tap below to detect your location
-              </Text>
-            </>
-          )}
-        </View>
-
-        {/* Action button */}
-        {permissionStatus === Location.PermissionStatus.DENIED ? (
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={openAppSettings}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={18}
-              color={colors.loginCardButtonText}
-            />
-            <Text style={styles.primaryButtonText}>
-              {NEARBY_ARTISTS_STRINGS.enableLocation}
-            </Text>
-          </TouchableOpacity>
-        ) : !detectedCountry ? (
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              isLoading && styles.primaryButtonDisabled,
-            ]}
-            onPress={requestAndLocate}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator
-                color={colors.loginCardButtonText}
-                size="small"
-              />
-            ) : (
-              <Ionicons
-                name="navigate"
-                size={18}
-                color={colors.loginCardButtonText}
-              />
-            )}
-            <Text style={styles.primaryButtonText}>Detect Location</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              isLoading && styles.primaryButtonDisabled,
-            ]}
-            onPress={searchArtists}
-            disabled={isLoading}
-          >
-            {screenState === "searching" ? (
-              <ActivityIndicator
-                color={colors.loginCardButtonText}
-                size="small"
-              />
-            ) : (
-              <Ionicons
-                name="search"
-                size={18}
-                color={colors.loginCardButtonText}
-              />
-            )}
-            <Text style={styles.primaryButtonText}>
-              {screenState === "searching"
-                ? NEARBY_ARTISTS_STRINGS.searchingArtists
-                : NEARBY_ARTISTS_STRINGS.searchButton}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Open Map button */}
-        <TouchableOpacity
-          style={styles.mapButton}
-          onPress={() => setMapVisible(true)}
-          activeOpacity={0.8}
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Ionicons name="map-outline" size={18} color={colors.primary} />
-          <Text style={styles.mapButtonText}>Open Discovery Map</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={16}
-            color={colors.textSecondary}
+          <ScreenHeader
+            subtitle={NEARBY_ARTISTS_STRINGS.screenSubtitle}
+            onLogout={logout}
+            onProfile={() => router.push("/profile")}
           />
-        </TouchableOpacity>
 
-        {/* Results */}
-        {screenState === "results" && (
-          <View style={styles.resultsContainer}>
-            {artists.length === 0 ? (
-              <Text style={styles.noResultsText}>
-                {NEARBY_ARTISTS_STRINGS.noResults}
-              </Text>
+          {/* Location status card */}
+          <View style={styles.locationCard}>
+            {isLoading && screenState !== "searching" ? (
+              <>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={styles.locationStatusText}>
+                  {NEARBY_ARTISTS_STRINGS.detectingLocation}
+                </Text>
+              </>
+            ) : detectedCountry ? (
+              <>
+                <Text style={styles.flagText}>{flag}</Text>
+                <View style={styles.locationTextCol}>
+                  <Text style={styles.locationFoundLabel}>
+                    {NEARBY_ARTISTS_STRINGS.locationDetected}
+                  </Text>
+                  <Text style={styles.locationName}>{locationLabel}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={locate}
+                  style={styles.refreshBtn}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="refresh" size={18} color={colors.primary} />
+                </TouchableOpacity>
+              </>
+            ) : permissionStatus === Location.PermissionStatus.DENIED ? (
+              <>
+                <Ionicons
+                  name="location-outline"
+                  size={22}
+                  color={colors.textSecondary}
+                />
+                <Text style={styles.permissionText}>
+                  {NEARBY_ARTISTS_STRINGS.permissionDenied}
+                </Text>
+              </>
             ) : (
-              <FlatList
-                data={artists}
-                keyExtractor={(item, i) => `${item.name}-${i}`}
-                renderItem={({ item, index }) => (
-                  <ArtistCard artist={item} index={index} />
-                )}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
-              />
+              <>
+                <Ionicons
+                  name="location-outline"
+                  size={22}
+                  color={colors.primary}
+                />
+                <Text style={styles.locationStatusText}>
+                  Tap below to detect your location
+                </Text>
+              </>
             )}
           </View>
-        )}
+
+          {/* Action buttons */}
+          {permissionStatus === Location.PermissionStatus.DENIED ? (
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={openAppSettings}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={18}
+                color={colors.loginCardButtonText}
+              />
+              <Text style={styles.primaryButtonText}>
+                {NEARBY_ARTISTS_STRINGS.enableLocation}
+              </Text>
+            </TouchableOpacity>
+          ) : !detectedCountry ? (
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                isLoading && styles.primaryButtonDisabled,
+              ]}
+              onPress={requestAndLocate}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator
+                  color={colors.loginCardButtonText}
+                  size="small"
+                />
+              ) : (
+                <Ionicons
+                  name="navigate"
+                  size={18}
+                  color={colors.loginCardButtonText}
+                />
+              )}
+              <Text style={styles.primaryButtonText}>Detect Location</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.radioCreateButton,
+                  (creatingRadio || isLoading) && styles.primaryButtonDisabled,
+                ]}
+                onPress={createLocalRadioPlaylist}
+                disabled={creatingRadio || isLoading}
+              >
+                {creatingRadio ? (
+                  <ActivityIndicator color={colors.primary} size="small" />
+                ) : (
+                  <Ionicons
+                    name="radio-outline"
+                    size={18}
+                    color={colors.primary}
+                  />
+                )}
+                <Text style={styles.radioCreateButtonText}>
+                  {creatingRadio
+                    ? "Creating playlist…"
+                    : "Create Local Radio Playlist"}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Open Map button */}
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() => setMapVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="map-outline" size={18} color={colors.primary} />
+            <Text style={styles.mapButtonText}>Open Discovery Map</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          {/* Artist results */}
+          {screenState === "results" && (
+            <View style={styles.resultsContainer}>
+              {artists.length === 0 ? (
+                <Text style={styles.noResultsText}>
+                  {NEARBY_ARTISTS_STRINGS.noResults}
+                </Text>
+              ) : (
+                <FlatList
+                  data={artists}
+                  keyExtractor={(item, i) => `${item.name}-${i}`}
+                  renderItem={({ item, index }) => (
+                    <ArtistCard artist={item} index={index} />
+                  )}
+                  scrollEnabled={false}
+                  contentContainerStyle={styles.listContent}
+                />
+              )}
+            </View>
+          )}
+
+          {/* Radio Playlists section */}
+          <View style={styles.radioSection}>
+            <View style={styles.radioSectionHeader}>
+              <Text style={styles.radioSectionTitle}>
+                Local Radio Playlists
+              </Text>
+              <TouchableOpacity
+                onPress={fetchRadioPlaylists}
+                disabled={radioLoading}
+                style={styles.radioRefreshBtn}
+              >
+                {radioLoading ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Ionicons name="refresh" size={18} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {radioPlaylists.length === 0 && !radioLoading ? (
+              <View style={styles.radioEmptyState}>
+                <Ionicons
+                  name="radio-outline"
+                  size={32}
+                  color={colors.textSecondary}
+                />
+                <Text style={styles.radioEmptyText}>
+                  No radio playlists yet. Detect your location and create one
+                  above!
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.radioList}>
+                {radioPlaylists.map((playlist) => (
+                  <RadioPlaylistCard
+                    key={playlist.id}
+                    playlist={playlist}
+                    onPlay={playPlaylist}
+                    isPlaying={
+                      playingPlaylistId === playlist.spotify_playlist_id
+                    }
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
       </SafeAreaView>
 
       <DiscoveryMapModal
@@ -370,6 +639,144 @@ export default function NearbyArtistsScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    width: "100%",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    alignItems: "center",
+    paddingHorizontal: 22,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  radioCreateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    alignSelf: "stretch",
+    backgroundColor: "rgba(29,185,84,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(29,185,84,0.35)",
+    borderRadius: 30,
+    paddingVertical: 14,
+    marginBottom: 24,
+  },
+  radioCreateButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.primary,
+    letterSpacing: 0.3,
+  },
+  radioSection: {
+    alignSelf: "stretch",
+    marginTop: 8,
+  },
+  radioSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  radioSectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: 0.2,
+  },
+  radioRefreshBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "rgba(29,185,84,0.08)",
+  },
+  radioEmptyState: {
+    alignItems: "center",
+    paddingVertical: 28,
+    gap: 10,
+    backgroundColor: "rgba(29,185,84,0.04)",
+    borderWidth: 1,
+    borderColor: colors.transcriptCardBorder,
+    borderRadius: 14,
+  },
+  radioEmptyText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: "center",
+    paddingHorizontal: 20,
+    lineHeight: 18,
+  },
+  radioList: {
+    gap: 10,
+  },
+  radioCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: colors.transcriptCardBackground,
+    borderWidth: 1,
+    borderColor: colors.transcriptCardBorder,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  radioCardContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  radioStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  radioCardInfo: {
+    flex: 1,
+  },
+  radioCardName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: 3,
+  },
+  radioCardMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  radioStatusBadge: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  radioCardMessage: {
+    fontSize: 11,
+    color: colors.danger,
+    flex: 1,
+  },
+  radioPlayBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  radioPlayBtnDisabled: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   locationCard: {
     flexDirection: "row",
     alignItems: "center",

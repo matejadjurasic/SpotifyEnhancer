@@ -29,6 +29,12 @@ export const N8N_PROFILE_WEBHOOK_URL =
   Constants.expoConfig?.extra?.n8nProfileWebhookUrl ||
   process.env.EXPO_PUBLIC_N8N_PROFILE_WEBHOOK_URL;
 
+export const N8N_RADIO_CREATE_WEBHOOK_URL =
+  "https://n8n.srv1211296.hstgr.cloud/webhook-test/5cd9c235-2d9c-4a31-9a13-4d9faeb2e529";
+
+export const N8N_RADIO_LIST_WEBHOOK_URL =
+  "https://n8n.srv1211296.hstgr.cloud/webhook/029ce85b-4055-4607-a4d3-2243f53a94c9";
+
 export const DEEPGRAM_API_KEY =
   Constants.expoConfig?.extra?.deepgramApiKey ||
   process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY ||
