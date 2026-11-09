@@ -1,0 +1,157 @@
+{
+  "name": "Get playlists",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "029ce85b-4055-4607-a4d3-2243f53a94c9",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b01d5221-b376-4202-892a-17bd9b16e582",
+      "name": "Webhook",
+      "webhookId": "029ce85b-4055-4607-a4d3-2243f53a94c9"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "spotify_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -16
+      ],
+      "id": "88192ccf-4b06-4693-a92e-a907d23f5d38",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.spotify.com/v1/me",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').item.json.body.spotify_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2b15cb9e-ab9a-4652-928d-b350bbd816be",
+      "name": "Get User Data",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        432,
+        240
+      ],
+      "id": "b6bc369c-fcfb-4d6b-a0a9-068d2ce10055",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        608,
+        -16
+      ],
+      "id": "5f7d71bb-be9c-4759-905d-57e4de2b249c",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Data": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "32017190-8c18-4148-af67-b5d1f3a03bae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "TLAuq7BevGant3dR",
+  "tags": []
+}

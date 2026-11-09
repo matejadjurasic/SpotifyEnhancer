@@ -1,0 +1,178 @@
+{
+  "name": "GetUserData",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://api.spotify.com/v1/me",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').item.json.body.spotify_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -144,
+        -192
+      ],
+      "id": "2250d6de-7dfa-4f57-89f5-1aba99b6f2f2",
+      "name": "Get User Data",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "balance",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "spotify_id",
+              "keyValue": "={{ $('Get User Data').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -208
+      ],
+      "id": "40d92d62-54d9-421c-970b-174708efd253",
+      "name": "Get balance",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "54bdab56-ff84-4d0d-b9df-aa1a6b29d0ee",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -192
+      ],
+      "id": "426a5463-bf14-4e8b-ac8b-7f99f4c8a4ac",
+      "name": "Webhook",
+      "webhookId": "54bdab56-ff84-4d0d-b9df-aa1a6b29d0ee"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\n{\n  \"name\": $('Get User Data').item.json.display_name,\n  \"balance\": $json.balance,\n  \"executions\": $('Get token usage').all().map(item => ({\n    total_cost: item.json.total_cost,\n    workflow_name: item.json.workflow_name,\n    created_at: item.json.created_at\n  }))\n}\n}}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        528,
+        -208
+      ],
+      "id": "f0099443-67fd-4f7b-b6db-fe4053bcb56b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "token_usage",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "spotify_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        112,
+        -208
+      ],
+      "id": "22b0955d-c620-4859-b030-508822f11516",
+      "name": "Get token usage",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get User Data": {
+      "main": [
+        [
+          {
+            "node": "Get token usage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get balance": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get token usage": {
+      "main": [
+        [
+          {
+            "node": "Get balance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9eddb318-0a82-4f41-9e14-fa6b1585adcf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "BelE3NLuxtysaSVv",
+  "tags": []
+}

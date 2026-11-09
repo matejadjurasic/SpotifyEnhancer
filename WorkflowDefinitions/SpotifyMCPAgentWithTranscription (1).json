@@ -1,0 +1,311 @@
+{
+  "name": "SpotifyMCPAgentWithTranscription",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "77004130-2c71-4053-bfbf-74ab427554e3",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        16
+      ],
+      "id": "7bdbaff6-4ee1-4834-a413-c8360d6f0689",
+      "name": "Webhook",
+      "webhookId": "77004130-2c71-4053-bfbf-74ab427554e3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://whisper:9000/asr",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "audio_file",
+              "inputDataFieldName": "audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -240,
+        16
+      ],
+      "id": "e874aa3a-3db2-42c2-a7b7-1f1187cdf4d4",
+      "name": "Whisper transcription",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        576,
+        -128
+      ],
+      "id": "459e3ed2-f68f-4cc2-b2a3-ee9c5ea8aed0",
+      "name": "Success response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69d20d66-3a96-4259-a85b-0f1bfd758811",
+              "name": "message",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        304
+      ],
+      "id": "6065f86d-480e-456c-b518-ad43f6a058b9",
+      "name": "Format error"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"message\": \"{{ $json.message }}\"\n}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        368,
+        304
+      ],
+      "id": "f8d2b513-8aa5-429c-a8b7-608a5f00f22f",
+      "name": "Error response"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Spotify voice assistant. You execute Spotify commands on behalf of the user by calling the available MCP tools.\n\n## Authentication\nEvery single tool call MUST include this exact access token:\naccess_token: {{ $('Webhook').item.json.body.spotify_token }}\nNever omit it. Never ask the user for it.\n\n## User Command\nExecute the following command:\n{{ $json.data }}\n\n## Available Tools\n- search_song(access_token, query) → returns track_id, track_name, artist, uri\n- play_song(access_token, track_uri) → plays on active device\n- like_song(access_token, track_id) → adds to Liked Songs\n- add_to_playlist(access_token, playlist_id, track_uri) → adds track to playlist\n- get_user_playlists(access_token) → returns list of playlists with id and name\n- get_current_song(access_token) → returns currently playing track\n\n## Tool Chaining Rules\n- To play a song by name: ALWAYS call search_song first, then pass the returned uri to play_song.\n- To like a song by name: call search_song first, then pass the returned track_id to like_song.\n- To add a song to a playlist by name: call search_song to get the uri, call get_user_playlists to find the playlist_id by name, then call add_to_playlist.\n- To like or add the currently playing song: call get_current_song first to get track_id and uri.\n- When a command involves multiple actions (e.g. \"play X, like it, and add it to playlist Y\"), execute all steps in order, passing results from one tool to the next.\n\n## Response Rules\n- After completing all actions, respond with a single short confirmation (e.g. \"Playing Rolling in the Deep by Adele and added it to Rap Classics.\").\n- If a tool returns an error, report it clearly and stop — do not retry with different parameters unless the error suggests a fixable mistake (e.g. wrong playlist name).\n- Never expose the access token in your response.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        160,
+        -128
+      ],
+      "id": "02d53456-b656-48f5-aece-90fddf76c1d5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://spotify-mcp:3000/mcp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        48
+      ],
+      "id": "38af8f9f-a173-4094-a957-c5f140dfa596",
+      "name": "Spotify MCP Tool"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        48
+      ],
+      "id": "f16ba2ea-8539-4690-98b7-e481269e23f1",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "6j1ZXBLB7RZe8snj",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "=kx0JrFZvUVWgzbcR",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/=kx0JrFZvUVWgzbcR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "execution_id": "={{ $execution.id }}"
+          },
+          "matchingColumns": [
+            "execution_id"
+          ],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "66a51352-6784-4d69-9d01-cc9b2923833e",
+      "name": "Call sub-workflow1",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        784,
+        -128
+      ],
+      "typeVersion": 1.2
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Whisper transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper transcription": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format error": {
+      "main": [
+        [
+          {
+            "node": "Error response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Success response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spotify MCP Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success response": {
+      "main": [
+        [
+          {
+            "node": "Call sub-workflow1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d24ca811-4100-4f13-bf45-90ca8979eb63",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "PrH4AgHkNpJFNd9P",
+  "tags": []
+}

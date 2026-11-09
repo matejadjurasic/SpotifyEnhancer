@@ -1,0 +1,187 @@
+{
+  "name": "GetArtists",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "f5f14273-20e7-4f48-af0d-a56123c00f4f",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "4ebb75b3-b0be-4e80-8596-f1431ac3bfdf",
+      "name": "Webhook",
+      "webhookId": "f5f14273-20e7-4f48-af0d-a56123c00f4f"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "city_markers"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "891f4a7d-33b8-4131-9252-b6c3d0b70daa",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -128
+      ],
+      "id": "4d14ab50-1fb8-4a10-a135-b0498d505671",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        0
+      ],
+      "id": "19078c56-8f96-4bad-b7be-b1d627d05883",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "path": "=24c7e8ce-9152-406c-8ea0-043136362866",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        208
+      ],
+      "id": "f8968d70-c65d-40f8-a430-906d6ad83969",
+      "name": "Webhook1",
+      "webhookId": "24c7e8ce-9152-406c-8ea0-043136362866"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        400,
+        208
+      ],
+      "id": "5f0483fd-02c9-429a-9afe-24a7a55f4cea",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "rpc/get_random_artists_by_city",
+        "filterType": "=string",
+        "filterString": "=p_city={{$json.query.city}}"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        192,
+        208
+      ],
+      "id": "d9d30729-52b5-42b1-a682-58647368758e",
+      "name": "Get artists by city",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Get artists by city",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get artists by city": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "32350590-4517-461a-86bc-1dc0a3d9c3ba",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "gnldgIVromVwo8Uu",
+  "tags": []
+}
