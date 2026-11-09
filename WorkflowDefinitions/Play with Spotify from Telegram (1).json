@@ -1,0 +1,831 @@
+{
+  "name": "Play with Spotify from Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        0
+      ],
+      "id": "267fa342-49f4-476f-88c6-e58c434a6d0d",
+      "name": "Telegram Trigger",
+      "webhookId": "fc7fa7ff-f95d-4769-88c1-de471abf301e",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7cfeb74b-8b97-429d-9fa7-db83bc243cc0",
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "375bf4c1-f1f8-4ec4-a5ca-f9bd0b459f1b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5bc60d7d-30eb-4039-959b-efb458543819",
+      "name": "Get a file",
+      "webhookId": "00af9799-c832-4f2b-8377-f429dcf3fb1a",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert music identifier.\n\nInput: a string of text that represents transcribed audio. This text may contain partial lyrics, misheard lyrics, noises, spoken hints about melody, mood, themes, instruments, rhythm, artist names, song titles, or other contextual details from a voice message.\n\nYour task is to identify the 3 most likely songs that match the transcript.\n\nFor each candidate:\n\n1. Identify the song title.\n2. Identify the artist or band.\n3. Assign a confidence score from 0 to 100.\n4. Provide specific clues from the transcript that support the identification.\n\nRank all candidates from the most likely to the least likely.\n\nOutput exactly 3 candidates whenever possible.\n\nImportant rules:\n\n- The first song must be the most likely match.\n- Candidates must be ordered by confidence from highest to lowest.\n- Do not return the same song more than once.\n- Confidence represents how likely the candidate is to be the song described in the transcript.\n- If the transcript strongly identifies one song but you cannot reasonably identify three alternatives, include the best song first and use null values with confidence 0 for the remaining positions.\n- Do not invent song titles or artists.\n- Even if the transcript explicitly contains a song title or artist, still return two additional alternative candidates when reasonable.\n\nOutput as strictly valid JSON using exactly this schema:\n\n{\n  \"songs\": [\n    {\n      \"rank\": 1,\n      \"song_title\": \"string or null\",\n      \"artist\": \"string or null\",\n      \"confidence\": 0,\n      \"supporting_clues\": [\n        \"description of a lyric, phrase, or contextual clue from the transcript\"\n      ]\n    },\n    {\n      \"rank\": 2,\n      \"song_title\": \"string or null\",\n      \"artist\": \"string or null\",\n      \"confidence\": 0,\n      \"supporting_clues\": [\n        \"description of a lyric, phrase, or contextual clue from the transcript\"\n      ]\n    },\n    {\n      \"rank\": 3,\n      \"song_title\": \"string or null\",\n      \"artist\": \"string or null\",\n      \"confidence\": 0,\n      \"supporting_clues\": [\n        \"description of a lyric, phrase, or contextual clue from the transcript\"\n      ]\n    }\n  ]\n}\n\nIf no song can be identified with reasonable confidence, return:\n\n{\n  \"songs\": [\n    {\n      \"rank\": 1,\n      \"song_title\": null,\n      \"artist\": null,\n      \"confidence\": 0,\n      \"supporting_clues\": []\n    },\n    {\n      \"rank\": 2,\n      \"song_title\": null,\n      \"artist\": null,\n      \"confidence\": 0,\n      \"supporting_clues\": []\n    },\n    {\n      \"rank\": 3,\n      \"song_title\": null,\n      \"artist\": null,\n      \"confidence\": 0,\n      \"supporting_clues\": []\n    }\n  ]\n}\n\nNow identify the 3 most likely songs from this transcript:\n\n\"\"\"\n{{ $json.data }}\n\"\"\"\n\nIMPORTANT: Output ONLY the raw JSON.\n\nDo NOT wrap the response in ```json.\nDo NOT include markdown.\nDo NOT include explanations outside the JSON.\nDo NOT include additional outer keys.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        800,
+        -80
+      ],
+      "id": "a7230dcd-31e4-4a13-8b6e-f54ddbe6ca72",
+      "name": "Basic LLM Chain",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        816,
+        112
+      ],
+      "id": "c1903993-e1df-4127-93c7-add42881e3eb",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WDCLHp2uOFwsemIH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "track",
+        "operation": "search",
+        "query": "=track:{{ $('Parse result').item.json.song_title }} artist:{{ $('Parse result').item.json.artist }}",
+        "limit": 1,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.spotify",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        96
+      ],
+      "id": "47fa1d97-49aa-4247-9bc8-84ff1772627a",
+      "name": "Search tracks by keyword",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "ijz2dviTjDDIEuCG",
+          "name": "Spotify account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "id": "=spotify:track:{{ $json.id }}"
+      },
+      "type": "n8n-nodes-base.spotify",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        96
+      ],
+      "id": "30dea910-93f4-43e6-95a9-00a52750e675",
+      "name": "Add a song to a queue",
+      "retryOnFail": true,
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "ijz2dviTjDDIEuCG",
+          "name": "Spotify account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "nextSong"
+      },
+      "type": "n8n-nodes-base.spotify",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        96
+      ],
+      "id": "da8a3b9b-6eb7-401c-ab71-866972cb5c7c",
+      "name": "Skip to the next track",
+      "retryOnFail": true,
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "ijz2dviTjDDIEuCG",
+          "name": "Spotify account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "message": "=Is this your song {{ $json.song_title }} by {{ $json.artist }}?",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeUnit": "minutes"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1712,
+        208
+      ],
+      "id": "7801956c-cec0-4747-b6fc-662cf219999b",
+      "name": "Human song approval",
+      "webhookId": "b88eb9a9-2b0b-49de-8ae2-dd27eb687e36",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1488,
+        -32
+      ],
+      "id": "e5f53909-d82a-484c-bb47-6b45449c5c00",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ef01bb97-a607-4121-81bc-1370c63ad8f0",
+              "leftValue": "={{ $json.song_title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1664,
+        32
+      ],
+      "id": "086052f5-141d-479c-8df2-2d35dcbc0212",
+      "name": "If song exists"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "89283673-d81d-412c-9195-daaf0246cb30",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1872,
+        256
+      ],
+      "id": "75ded09f-57b3-45cc-864b-0be2f4ee3fb1",
+      "name": "If approved"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get raw LLM output\nlet raw = $json[\"text\"] || $json[\"output\"] || \"\";\n\n// Remove Markdown code fences if the model adds them\nraw = raw\n    .replace(/```json\\s*/gi, \"\")\n    .replace(/```\\s*/g, \"\")\n    .trim();\n\nlet parsed;\n\n// Default structure\nconst defaultSongs = [\n    {\n        rank: 1,\n        song_title: null,\n        artist: null,\n        confidence: 0,\n        supporting_clues: []\n    },\n    {\n        rank: 2,\n        song_title: null,\n        artist: null,\n        confidence: 0,\n        supporting_clues: []\n    },\n    {\n        rank: 3,\n        song_title: null,\n        artist: null,\n        confidence: 0,\n        supporting_clues: []\n    }\n];\n\ntry {\n    parsed = JSON.parse(raw);\n} catch (err) {\n    parsed = {\n        songs: defaultSongs\n    };\n}\n\n// Ensure songs is an array\nconst songs = Array.isArray(parsed.songs)\n    ? parsed.songs\n    : defaultSongs;\n\n// Normalize and return each song as a separate n8n item\nreturn songs.map((song, index) => ({\n    json: {\n        rank: song.rank ?? index + 1,\n        song_title: song.song_title ?? null,\n        artist: song.artist ?? null,\n        confidence: Number(song.confidence) || 0,\n        supporting_clues: Array.isArray(song.supporting_clues)\n            ? song.supporting_clues\n            : []\n    }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -80
+      ],
+      "id": "d205bfbf-7bfc-42d0-b96e-2855cb8b637c",
+      "name": "Parse result"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://whisper:9000/asr",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "audio_file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "0ef8c06f-2cc7-423a-872b-80819a87dd3d",
+      "name": "Whisper Transcription",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=I couldn't find your song",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1968,
+        -64
+      ],
+      "id": "adddd9e1-fe9c-4f46-a883-3e775840f232",
+      "name": "Couldn't find the song",
+      "webhookId": "229c1710-24ec-4fe4-a4d6-54a7cbb2bfb3",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Currently playing:  {{ $('Search tracks by keyword').item.json.name }} by {{ $('Search tracks by keyword').item.json.album.artists[0].name }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2640,
+        96
+      ],
+      "id": "bfeb85f9-7ae5-4b6c-b9b2-89bb4f3dda3b",
+      "name": "Found and played song",
+      "webhookId": "229c1710-24ec-4fe4-a4d6-54a7cbb2bfb3",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=The AI agent failed during execution.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        112
+      ],
+      "id": "da33e24f-8056-4fd9-a435-d7302324ea42",
+      "name": "AI agent failure",
+      "webhookId": "229c1710-24ec-4fe4-a4d6-54a7cbb2bfb3",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=The transcription process failed.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        240
+      ],
+      "id": "092fb766-fda0-489d-89bf-ebdc59ea442e",
+      "name": "Transcription failure",
+      "webhookId": "229c1710-24ec-4fe4-a4d6-54a7cbb2bfb3",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=I couldn't find your song on Spotify.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2112,
+        320
+      ],
+      "id": "4a840257-fa7a-4e83-b485-0613f51e3fdc",
+      "name": "Search failure",
+      "webhookId": "229c1710-24ec-4fe4-a4d6-54a7cbb2bfb3",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=I couldn't add your song to the queue.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2336,
+        304
+      ],
+      "id": "43d46614-bede-4178-9a65-c2c4d1ba9860",
+      "name": "Queue failure",
+      "webhookId": "229c1710-24ec-4fe4-a4d6-54a7cbb2bfb3",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=I couldn't skip to your song.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2576,
+        288
+      ],
+      "id": "6333d98a-6805-42f9-9cb9-4fe524b4728f",
+      "name": "Skip failure",
+      "webhookId": "229c1710-24ec-4fe4-a4d6-54a7cbb2bfb3",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwcnmcDDloC5g6j0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "=kx0JrFZvUVWgzbcR",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/=kx0JrFZvUVWgzbcR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "execution_id": "={{ $execution.id }}",
+            "spotify_id": "test123",
+            "balance": 20,
+            "should_charge_client": false
+          },
+          "matchingColumns": [
+            "execution_id"
+          ],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "spotify_id",
+              "displayName": "spotify_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "should_charge_client",
+              "displayName": "should_charge_client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            },
+            {
+              "id": "balance",
+              "displayName": "balance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "0e330763-8723-491d-a882-444e11e35e13",
+      "name": "Calculate costs",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        2816,
+        96
+      ],
+      "typeVersion": 1.2,
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Whisper Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI agent failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search tracks by keyword": {
+      "main": [
+        [
+          {
+            "node": "Add a song to a queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add a song to a queue": {
+      "main": [
+        [
+          {
+            "node": "Skip to the next track",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Queue failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip to the next track": {
+      "main": [
+        [
+          {
+            "node": "Found and played song",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human song approval": {
+      "main": [
+        [
+          {
+            "node": "If approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Couldn't find the song",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If song exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If song exists": {
+      "main": [
+        [
+          {
+            "node": "Human song approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Couldn't find the song",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If approved": {
+      "main": [
+        [
+          {
+            "node": "Search tracks by keyword",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse result": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper Transcription": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Transcription failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found and played song": {
+      "main": [
+        [
+          {
+            "node": "Calculate costs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "8627cd00-6c72-4db5-8edb-2343094886d8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "9jaPlJ2CDbFoTO2P",
+  "tags": []
+}

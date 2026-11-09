@@ -1,0 +1,1113 @@
+{
+  "name": "Cost calculator",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e6b9daf-495c-44e3-a39e-40fc8e654eae",
+              "name": "execution_id",
+              "type": "number",
+              "value": "={{ $('When Executed by Another Workflow').item.json.execution_id }}"
+            },
+            {
+              "id": "1ba39074-c67e-453c-9a64-07e0376e64bf",
+              "name": "tokenUsage",
+              "type": "array",
+              "value": "={{$jmespath(\n  $json,\n  \"data.resultData.runData.*[] | [?data.ai_languageModel] | [].{model: data.ai_languageModel[0][0].json.response.generations[0][0].generationInfo.model_name || inputOverride.ai_languageModel[0][0].json.options.model_name || inputOverride.ai_languageModel[0][0].json.options.model, tokenUsage: data.ai_languageModel[0][0].json.tokenUsage || data.ai_languageModel[0][0].json.tokenUsageEstimate}\"\n)}}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "includeFields": "workflowData.id, workflowData.name",
+        "options": {}
+      },
+      "id": "ef35d1d2-af96-4e8a-9909-cd865c2fec4a",
+      "name": "Extract token usage data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        464,
+        0
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "execution",
+        "operation": "get",
+        "executionId": "={{ $json.execution_id }}",
+        "options": {
+          "activeWorkflows": true
+        },
+        "requestOptions": {}
+      },
+      "id": "46ce854b-4c27-4707-b2ad-baed3f59a56f",
+      "name": "Get execution data",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        224,
+        0
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "KtKCkrzZTDMlBExd",
+          "name": "n8n account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "execution_id"
+            },
+            {
+              "name": "spotify_id"
+            },
+            {
+              "name": "should_charge_client",
+              "type": "boolean"
+            },
+            {
+              "name": "balance",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "f136cc6f-2f03-447c-a672-5a54ffadebe2",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tokenUsage",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "4ca40665-e4eb-42f7-ab8c-267f1fb517b4",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        672,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "tokenUsage.tokenUsage.promptTokens"
+            },
+            {
+              "aggregation": "sum",
+              "field": "tokenUsage.tokenUsage.completionTokens"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "id, name, tokenUsage.model, execution_id",
+        "options": {}
+      },
+      "id": "a01db396-aa96-4979-a662-01813c7770ce",
+      "name": "Sum Token Totals - aggregate by model",
+      "type": "n8n-nodes-base.summarize",
+      "position": [
+        880,
+        0
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-ymDANIhscxCGOXzZ6ZHngQoLDfnbq2DkJBowma7qds",
+          "mode": "list",
+          "cachedResultName": "[TEMPLATE] Calculate LLM Token Usage",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-ymDANIhscxCGOXzZ6ZHngQoLDfnbq2DkJBowma7qds/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Executions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-ymDANIhscxCGOXzZ6ZHngQoLDfnbq2DkJBowma7qds/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "execution_id": "={{ $json.execution_id }}",
+            "timestamp": "={{ $now.format('yyyy-MM-dd HH:mm:ss')}}",
+            "workflow_id": "={{ $json.id }}",
+            "workflow_name": "={{ $json.name }}",
+            "llm_model": "={{ $json.tokenUsage_model }}",
+            "input tokens": "={{ $json.sum_tokenUsage_tokenUsage_promptTokens }}",
+            "completion tokens": "={{ $json.sum_tokenUsage_tokenUsage_completionTokens }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_id",
+              "displayName": "workflow_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_name",
+              "displayName": "workflow_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "llm_model",
+              "displayName": "llm_model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input tokens",
+              "displayName": "input tokens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "completion tokens",
+              "displayName": "completion tokens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input price",
+              "displayName": "input price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "output price",
+              "displayName": "output price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "input cost",
+              "displayName": "input cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "output cost",
+              "displayName": "output cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "total cost",
+              "displayName": "total cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a482647d-ebbd-47c0-9fec-1ab6ce911b12",
+      "name": "Record token usage",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1024,
+        -320
+      ],
+      "typeVersion": 4.6,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o1kpMkUmyUKABt3j",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -464
+      ],
+      "id": "f012aae8-fe2f-483c-bbb0-a6ea53c85eca",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "37ae9cfd-1f15-45be-a5ad-8e1f165fa9cd",
+              "name": "execution_id",
+              "value": "493",
+              "type": "string"
+            },
+            {
+              "id": "d100a5e1-a384-4112-8c11-0279e51617d8",
+              "name": "spotify_id",
+              "value": "cfjcbq8dy2rg0swlxj143jkhb",
+              "type": "string"
+            },
+            {
+              "id": "b0bd25c1-ae8d-4a74-bd7c-86b251dca6b7",
+              "name": "should_charge_client ",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "97420851-032a-4c31-bb82-dfed57c21791",
+              "name": "balance",
+              "value": 19.74,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -464
+      ],
+      "id": "1db28ed9-d2ed-4364-bba0-d38adc63826f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  item.json.input_cost =\n    ($('Sum Token Totals - aggregate by model').first().json.sum_tokenUsage_tokenUsage_promptTokens / 1_000_000) * $input.first().json.input_price;\n\n  item.json.output_cost =\n    ($('Sum Token Totals - aggregate by model').first().json.sum_tokenUsage_tokenUsage_completionTokens/ 1_000_000) * $input.first().json.output_price;\n\n  item.json.total_cost = Number(\n    (item.json.input_cost + item.json.output_cost).toFixed(6)\n  );\n\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "185bd1f5-03fc-4d57-b30d-bfebdea6f57e",
+      "name": "Calculate costs"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "llm_prices",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "={{ $json.tokenUsage_model }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "68bb4543-be4f-4dbf-8946-7e68920ab3d8",
+      "name": "Get LLM Prices",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "token_usage",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "workflow_id",
+              "fieldValue": "={{ $('Extract token usage data').item.json.id }}"
+            },
+            {
+              "fieldId": "workflow_name",
+              "fieldValue": "={{ $('Extract token usage data').item.json.name }}"
+            },
+            {
+              "fieldId": "llm_model",
+              "fieldValue": "={{ $json.model_name }}"
+            },
+            {
+              "fieldId": "input_tokens",
+              "fieldValue": "={{ $('Sum Token Totals - aggregate by model').item.json.sum_tokenUsage_tokenUsage_promptTokens }}"
+            },
+            {
+              "fieldId": "completion_tokens",
+              "fieldValue": "={{ $('Sum Token Totals - aggregate by model').item.json.sum_tokenUsage_tokenUsage_completionTokens }}"
+            },
+            {
+              "fieldId": "input_cost",
+              "fieldValue": "={{ $json.input_cost }}"
+            },
+            {
+              "fieldId": "output_cost",
+              "fieldValue": "={{ $json.output_cost }}"
+            },
+            {
+              "fieldId": "total_cost",
+              "fieldValue": "={{ $json.total_cost }}"
+            },
+            {
+              "fieldId": "spotify_id",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.spotify_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        0
+      ],
+      "id": "86c03359-85df-460a-9d20-f648423ef334",
+      "name": "Add token usage entry",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "250eed49-784d-4bd0-bfc6-21456d15cead",
+              "leftValue": "={{ $('When Executed by Another Workflow').item.json.should_charge_client }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        0
+      ],
+      "id": "8b017df5-b771-44c4-bdfe-4d4014d59d9e",
+      "name": "If should charge client"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "balance",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "spotify_id",
+              "condition": "eq",
+              "keyValue": "={{ $('When Executed by Another Workflow').item.json.spotify_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "balance",
+              "fieldValue": "={{ Number($('When Executed by Another Workflow').item.json.balance) - Number($('Calculate costs').item.json.total_cost) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        -16
+      ],
+      "id": "f5d20315-b75a-493b-a62d-04a5998bdb61",
+      "name": "Update client balance",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e6b9daf-495c-44e3-a39e-40fc8e654eae",
+              "name": "execution_id",
+              "type": "number",
+              "value": "={{ $('Edit Fields').item.json.execution_id }}"
+            },
+            {
+              "id": "1ba39074-c67e-453c-9a64-07e0376e64bf",
+              "name": "tokenUsage",
+              "type": "array",
+              "value": "={{$jmespath(\n  $json,\n  \"data.resultData.runData.*[] | [?data.ai_languageModel] | [].{model: data.ai_languageModel[0][0].json.response.generations[0][0].generationInfo.model_name || inputOverride.ai_languageModel[0][0].json.options.model_name || inputOverride.ai_languageModel[0][0].json.options.model, tokenUsage: data.ai_languageModel[0][0].json.tokenUsage || data.ai_languageModel[0][0].json.tokenUsageEstimate}\"\n)}}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "includeFields": "workflowData.id, workflowData.name",
+        "options": {}
+      },
+      "id": "ebf27ec1-b91c-435a-9693-f9f6db4f22dd",
+      "name": "Extract token usage data1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        688,
+        -480
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "execution",
+        "operation": "get",
+        "executionId": "={{ $json.execution_id }}",
+        "options": {
+          "activeWorkflows": true
+        },
+        "requestOptions": {}
+      },
+      "id": "e408cb6c-813d-4359-b7e9-7c55abffe5be",
+      "name": "Get execution data1",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        464,
+        -480
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "KtKCkrzZTDMlBExd",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tokenUsage",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "6de984ab-addf-4562-8f01-604967fa4fe0",
+      "name": "Split Out1",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        896,
+        -480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "tokenUsage.tokenUsage.promptTokens"
+            },
+            {
+              "aggregation": "sum",
+              "field": "tokenUsage.tokenUsage.completionTokens"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "id, name, tokenUsage.model, execution_id",
+        "options": {}
+      },
+      "id": "414a005b-0f77-4079-8b8c-0e7469c7e181",
+      "name": "Sum Token Totals - aggregate by model1",
+      "type": "n8n-nodes-base.summarize",
+      "position": [
+        1104,
+        -480
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  item.json.input_cost =\n    ($('Sum Token Totals - aggregate by model1').first().json.sum_tokenUsage_tokenUsage_promptTokens / 1_000_000) * $input.first().json.input_price;\n\n  item.json.output_cost =\n    ($('Sum Token Totals - aggregate by model1').first().json.sum_tokenUsage_tokenUsage_completionTokens/ 1_000_000) * $input.first().json.output_price;\n\n  item.json.total_cost = Number(\n    (item.json.input_cost + item.json.output_cost).toFixed(6)\n  );\n\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -480
+      ],
+      "id": "a371e1a4-ff3b-4fa4-a047-cacedde2ee21",
+      "name": "Calculate costs1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "llm_prices",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "={{ $json.tokenUsage_model }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        -480
+      ],
+      "id": "8ce18727-5ec9-427c-aff1-a2d874be9746",
+      "name": "Get LLM Prices1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "token_usage",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "workflow_id",
+              "fieldValue": "={{ $('Extract token usage data1').item.json.id }}"
+            },
+            {
+              "fieldId": "workflow_name",
+              "fieldValue": "={{ $('Extract token usage data1').item.json.name }}"
+            },
+            {
+              "fieldId": "llm_model",
+              "fieldValue": "={{ $json.model_name }}"
+            },
+            {
+              "fieldId": "input_tokens",
+              "fieldValue": "={{ $('Sum Token Totals - aggregate by model1').item.json.sum_tokenUsage_tokenUsage_promptTokens }}"
+            },
+            {
+              "fieldId": "completion_tokens",
+              "fieldValue": "={{ $('Sum Token Totals - aggregate by model1').item.json.sum_tokenUsage_tokenUsage_completionTokens }}"
+            },
+            {
+              "fieldId": "input_cost",
+              "fieldValue": "={{ $json.input_cost }}"
+            },
+            {
+              "fieldId": "output_cost",
+              "fieldValue": "={{ $json.output_cost }}"
+            },
+            {
+              "fieldId": "total_cost",
+              "fieldValue": "={{ $json.total_cost }}"
+            },
+            {
+              "fieldId": "spotify_id",
+              "fieldValue": "={{ $('Edit Fields').item.json.spotify_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        -480
+      ],
+      "id": "46215da4-a448-4f72-942f-aed249af71a9",
+      "name": "Add token usage entry1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "250eed49-784d-4bd0-bfc6-21456d15cead",
+              "leftValue": "={{ $('Edit Fields').item.json['should_charge_client '] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        -480
+      ],
+      "id": "10ae6d5b-8c05-4cda-95c5-f3ef6396c8eb",
+      "name": "If should charge client1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "balance",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "spotify_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Edit Fields').item.json.spotify_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "balance",
+              "fieldValue": "={{ Number($('Edit Fields').item.json.balance) - Number($('Calculate costs1').item.json.total_cost) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        -496
+      ],
+      "id": "5d54d87b-2223-4823-a5a0-38978fadb48d",
+      "name": "Update client balance1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Couldn't save execution info"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        224
+      ],
+      "id": "c1ad0a93-0ac4-4e66-9bf9-5fa2749339a4",
+      "name": "Couldn't save execution info"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Couldn't charge client"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        208
+      ],
+      "id": "e3e67004-37ee-46da-9d3d-a34996aac52b",
+      "name": "Couldn't charge client"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Couldn't fetch llm prices"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        224
+      ],
+      "id": "6f803949-dd34-4d72-9a70-651229b6ffda",
+      "name": "Couldn't fetch llm prices"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Couldn't get execution data"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        304,
+        208
+      ],
+      "id": "fb30d44d-e1ed-4c2c-86ef-847b7ae35ecb",
+      "name": "Couldn't get execution data"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "execution_id": "594878"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Extract token usage data": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get execution data": {
+      "main": [
+        [
+          {
+            "node": "Extract token usage data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Couldn't get execution data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get execution data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Sum Token Totals - aggregate by model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sum Token Totals - aggregate by model": {
+      "main": [
+        [
+          {
+            "node": "Get LLM Prices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get execution data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate costs": {
+      "main": [
+        [
+          {
+            "node": "Add token usage entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LLM Prices": {
+      "main": [
+        [
+          {
+            "node": "Calculate costs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Couldn't fetch llm prices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add token usage entry": {
+      "main": [
+        [
+          {
+            "node": "If should charge client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Couldn't save execution info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If should charge client": {
+      "main": [
+        [
+          {
+            "node": "Update client balance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Update client balance": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Couldn't charge client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract token usage data1": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get execution data1": {
+      "main": [
+        [
+          {
+            "node": "Extract token usage data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Sum Token Totals - aggregate by model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sum Token Totals - aggregate by model1": {
+      "main": [
+        [
+          {
+            "node": "Get LLM Prices1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate costs1": {
+      "main": [
+        [
+          {
+            "node": "Add token usage entry1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LLM Prices1": {
+      "main": [
+        [
+          {
+            "node": "Calculate costs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add token usage entry1": {
+      "main": [
+        [
+          {
+            "node": "If should charge client1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If should charge client1": {
+      "main": [
+        [
+          {
+            "node": "Update client balance1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "221ae163-2f51-4138-9faa-37979db10cbb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "kx0JrFZvUVWgzbcR",
+  "tags": []
+}

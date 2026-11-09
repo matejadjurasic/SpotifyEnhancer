@@ -1,0 +1,1510 @@
+{
+  "name": "Playlist creator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "5cd9c235-2d9c-4a31-9a13-4d9faeb2e529",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -976,
+        16
+      ],
+      "id": "682fc414-72da-4c69-9ace-bb8d7d89446a",
+      "name": "Webhook",
+      "webhookId": "5cd9c235-2d9c-4a31-9a13-4d9faeb2e529"
+    },
+    {
+      "parameters": {
+        "url": "https://api.spotify.com/v1/me",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').item.json.body.spotify_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -816,
+        16
+      ],
+      "id": "d8d31edb-22b3-4147-8aef-562e8064ed69",
+      "name": "Get User Data",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "balance",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "spotify_id",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        0
+      ],
+      "id": "8448459a-167c-46a1-8260-7690227c2712",
+      "name": "Get balance",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6153f2d2-7ffa-4798-9e7c-721d5cf757f4",
+              "leftValue": "={{ $json.balance }}",
+              "rightValue": 0.1,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -368,
+        -16
+      ],
+      "id": "5c173f5a-292e-4094-bf5c-54a120efa0c1",
+      "name": "If has balance"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "rpc/get_random_artists_by_city",
+        "filterType": "=string",
+        "filterString": "=p_city={{ $('Webhook').item.json.body.city }}"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -48
+      ],
+      "id": "7677b661-ea9c-47f6-8b26-cb95dd2ee3f3",
+      "name": "Get artists by city",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "playlists",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "spotify_id",
+              "fieldValue": "={{ $('Get User Data').item.json.id }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "FINDING_ARTISTS"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('Webhook').item.json.body.city }} Radio"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -48
+      ],
+      "id": "1011207b-2c6b-4878-a004-ae768efe7e47",
+      "name": "Create playlist entry",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a music recommendation and identification assistant.\n\nTask\n\nYou will receive a list of artist names in the following input field:\n\n{{ $('Extract artist names').item.json.allNames }}\n\nThe input may contain multiple artist names separated by commas.\n\nFor each artist, identify exactly 3 of their most popular, recognizable, or commercially successful songs.\n\nInstructions\nExtract all artist names from {{ $('Extract artist names').item.json.allNames }}.\nProcess every artist independently.\nFor each artist, identify exactly 3 songs.\nChoose songs that are among the artist's most popular, recognizable, or commercially successful tracks.\nUse the official and exact song title whenever possible.\nDo not invent song titles.\nOnly include artists that you can confidently identify.\nEach song must be associated with the artist it belongs to.\nPreserve the order of the artists from the input.\nFor each artist, return their 3 songs consecutively.\nDo not include explanations, descriptions, rankings, confidence scores, or any additional text.\nThe song field must contain only the song title, without the artist name.\nThe artist field must contain the exact artist name from the input.\nIf the input contains 3 artists, the result should normally contain exactly 9 objects.\nExample\nInput\nNatasa Bekvalac, Konstrakta, Toše Proeski\nExpected Output\n{\n  \"songs\": [\n    {\n      \"artist\": \"Natasa Bekvalac\",\n      \"song\": \"Mala plava\"\n    },\n    {\n      \"artist\": \"Natasa Bekvalac\",\n      \"song\": \"Nikotin\"\n    },\n    {\n      \"artist\": \"Natasa Bekvalac\",\n      \"song\": \"Original\"\n    },\n    {\n      \"artist\": \"Konstrakta\",\n      \"song\": \"In corpore sano\"\n    },\n    {\n      \"artist\": \"Konstrakta\",\n      \"song\": \"Nobl\"\n    },\n    {\n      \"artist\": \"Konstrakta\",\n      \"song\": \"Mekano\"\n    },\n    {\n      \"artist\": \"Toše Proeski\",\n      \"song\": \"Čija si\"\n    },\n    {\n      \"artist\": \"Toše Proeski\",\n      \"song\": \"Igra bez granica\"\n    },\n    {\n      \"artist\": \"Toše Proeski\",\n      \"song\": \"Pratim te\"\n    }\n  ]\n}\nOutput Rules\n\nYour response must strictly follow the required structured output format.\n\nReturn exactly:\n\n{\n  \"songs\": [\n    {\n      \"artist\": \"Artist Name\",\n      \"song\": \"Exact Song Name\"\n    }\n  ]\n}\n\nThe songs array must contain all selected songs for all identified artists.\n\nDo not output any text outside the structured response.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        992,
+        -80
+      ],
+      "id": "7b6eb847-f26f-4045-a726-1a5b01613037",
+      "name": "Basic LLM Chain",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        944,
+        96
+      ],
+      "id": "a138dbc4-b1b3-4720-9519-00cb11f5a02b",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WDCLHp2uOFwsemIH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Basic LLM Chain').first().json;\n// Parse the JSON string returned by the AI agent\nconst parsed = JSON.parse(input.text);\n\n// Return one n8n item per song\nreturn parsed.songs.map(item => ({\n  json: {\n    artist: item.artist,\n    song: item.song\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -96
+      ],
+      "id": "de8f75ee-d3ed-4469-adbb-ce7c1501a4ca",
+      "name": "Parse result"
+    },
+    {
+      "parameters": {
+        "url": "https://api.spotify.com/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=track:{{$json.song}} artist:{{$json.artist}}"
+            },
+            {
+              "name": "type",
+              "value": "track"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').first().json.body.spotify_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        176,
+        736
+      ],
+      "id": "759dd749-f5ab-4360-a089-6b69232f38b7",
+      "name": "Find Spotify track",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -160,
+        640
+      ],
+      "id": "4f3b357e-992a-45a7-8587-6dd629b9cdc0",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.spotify.com/v1/me/playlists",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').first().json.body.spotify_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"name\": \"{{ $('Webhook').first().json.body.city }} Radio\",\n    \"description\": \"Made by spotify plus\",\n    \"public\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        736,
+        528
+      ],
+      "id": "50604aed-902d-4b6c-8584-f4c0116f4e84",
+      "name": "Create playlist",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.spotify.com/v1/playlists/{{ $json.id }}/items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').first().json.body.spotify_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"uris\": {{ JSON.stringify($('Format spotify track uris').item.json.uris) }},\n  \"position\": 0\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        976,
+        512
+      ],
+      "id": "1e717a14-cd09-4251-a37d-d12d23a29a2b",
+      "name": "Add songs to playlist",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    artist: $('Loop Over Items').item.json.artist,\n    song: $('Loop Over Items').item.json.song,\n    spotifyId: $input.first().json.tracks.items[0].id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        720
+      ],
+      "id": "2b543098-d70c-40c2-a686-efd45b71c790",
+      "name": "Extract Spotify ID"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        704
+      ],
+      "id": "06e8b22f-1ace-44f1-9541-7834af8a1f71",
+      "name": "Wait",
+      "webhookId": "f071dd7e-f96e-4f1e-87a7-dc0f1948b4ca"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all incoming items\nconst items = $('Get artists by city').all();\n\n// Extract the 'name' property from each item and join them together\nconst combinedNames = items.map(item => item.json.name).join(', ');\n\n// Return a single item containing the combined string\nreturn {\n  json: {\n    allNames: combinedNames\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -80
+      ],
+      "id": "6da3d709-54b1-4f40-a180-5319e2d2b8c3",
+      "name": "Extract artist names"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message",
+              "fieldValue": "Couldn't find artists for that city."
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "FAILED"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        208
+      ],
+      "id": "5e66e541-ae9d-4011-951c-88405135edda",
+      "name": "Update status - Artist error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "FINDING_SONGS"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        608,
+        -80
+      ],
+      "id": "c29bdab0-731d-42d9-a046-bbcea129c8fb",
+      "name": "Update status - Finding songs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "48aed435-da61-4f68-b85e-6a0ffebde4bf",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        -64
+      ],
+      "id": "9de11feb-4ff7-4fa2-a4b1-cb6bb31f76e8",
+      "name": "If artists exist"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message",
+              "fieldValue": "The AI agent failed to find the songs."
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "FAILED"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        128
+      ],
+      "id": "9aa2fb76-ee1f-4a4f-ae90-6f3b0b36bd59",
+      "name": "Update status - AI error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        16,
+        -48
+      ],
+      "id": "6be9e7cf-d8ca-4420-8c12-b7b48b97a151",
+      "name": "Success response"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -784,
+        240
+      ],
+      "id": "0a21a85e-0c93-40b9-ad34-49e1bf5c06b7",
+      "name": "Get User Data failure"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -560,
+        208
+      ],
+      "id": "d66efe58-b740-4b10-8311-33c15ac648b7",
+      "name": "Get balance failure"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -320,
+        192
+      ],
+      "id": "10948bd8-62b7-4b24-9f4f-edd13bd568b0",
+      "name": "No balance failure"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -96,
+        176
+      ],
+      "id": "e80443ea-0782-42dc-adfd-ed1fcd839f78",
+      "name": "Creation failure"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "FINDING_SONGS_ON_SPOTIFY"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -96
+      ],
+      "id": "a26d0c8c-3d8b-4d15-8444-0d71f0f2ee13",
+      "name": "Update status - Finding songs on spotify",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "CREATING_PLAYLIST"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        112,
+        528
+      ],
+      "id": "7292fa36-5a13-4650-9677-5d395f92907e",
+      "name": "Update status - Creating playlist",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "CREATED"
+            },
+            {
+              "fieldId": "spotify_playlist_id",
+              "fieldValue": "={{ $('Create playlist').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        496
+      ],
+      "id": "0f696d81-1d9c-4e93-b6a7-6154a1d70e4c",
+      "name": "Update status - Created",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message",
+              "fieldValue": "Couldn't create the playlist."
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "FAILED"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        928,
+        672
+      ],
+      "id": "22c38168-6380-4296-86d4-43c8a01eba9a",
+      "name": "Update status - Playlist error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message",
+              "fieldValue": "Couldn't add songs to the playlist."
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "FAILED"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        656
+      ],
+      "id": "392465ad-16ea-457c-a1d8-97a046fbc561",
+      "name": "Update status - Playlist song error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $('Loop Over Items').all();\n\nconst spotifyIds = items\n  .map(item => item.json.spotifyId)\n  .filter(id => id);\n\nreturn [\n  {\n    json: {\n      spotifyIds\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        528
+      ],
+      "id": "82b074b5-c404-4f52-ae6a-97a4eae7e401",
+      "name": "Combine all spotify ids"
+    },
+    {
+      "parameters": {
+        "jsCode": "const spotifyIds = $json.spotifyIds;\n\nreturn [\n  {\n    json: {\n      uris: spotifyIds.map(id => `spotify:track:${id}`)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        528
+      ],
+      "id": "b1d62962-372e-487f-8fe3-fa0d1873e8b3",
+      "name": "Format spotify track uris"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "=kx0JrFZvUVWgzbcR",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/=kx0JrFZvUVWgzbcR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "execution_id": "={{ $execution.id }}",
+            "spotify_id": "={{ $('Get User Data').first().json.id }}",
+            "balance": "={{ $('Get balance').first().json.balance }}",
+            "should_charge_client": "={{ $json.should_charge_client }}"
+          },
+          "matchingColumns": [
+            "execution_id"
+          ],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "spotify_id",
+              "displayName": "spotify_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "should_charge_client",
+              "displayName": "should_charge_client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            },
+            {
+              "id": "balance",
+              "displayName": "balance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "336c5281-a92b-4217-a6f7-2befdc8d6479",
+      "name": "Calculate costs",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        1600,
+        496
+      ],
+      "typeVersion": 1.2,
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f5a4781e-4300-418a-8532-a8f8c4121329",
+              "name": "should_charge_client",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        496
+      ],
+      "id": "c5545277-4fc1-4675-8459-82e7c032e4c2",
+      "name": "Set charge client to true"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f5a4781e-4300-418a-8532-a8f8c4121329",
+              "name": "should_charge_client",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        784
+      ],
+      "id": "e947b31f-70fd-40e2-b960-116d43395cb2",
+      "name": "Set charge client to false"
+    },
+    {
+      "parameters": {
+        "jsCode": "const uris = $('Format spotify track uris').first().json.uris;\n\nreturn [\n  {\n    json: {\n      items: uris.map(uri => ({\n        uri: uri.replace(/\\\\:/g, ':')\n      }))\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        720
+      ],
+      "id": "91b7966e-11f6-487b-bb0a-5a61d91aab7f",
+      "name": "Format tracks for delete"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://api.spotify.com/v1/playlists/{{ $('Create playlist').item.json.id }}/items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').first().json.body.spotify_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"items\": {{ JSON.stringify($('Format tracks for delete').item.json.items) }},\n  \"snapshot_id\": {{$('Add songs to playlist').first().json.snapshot_id}}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1856,
+        784
+      ],
+      "id": "1a399225-ee6e-4033-8168-52b7d4dae3b0",
+      "name": "Delete songs from playlist",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "https://api.spotify.com/v1/me/library",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "uris",
+              "value": "=spotify:playlist:{{ $('Create playlist').item.json.id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Webhook').first().json.body.spotify_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2096,
+        768
+      ],
+      "id": "9385d1db-3d75-4071-821d-4de3a2daf542",
+      "name": "Delete playlist",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "playlists",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create playlist entry').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message",
+              "fieldValue": "Couldn't process payment."
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "FAILED"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2352,
+        752
+      ],
+      "id": "bb44906d-0d62-456d-8d6a-1d648ad027e5",
+      "name": "Update status - Payment error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get User Data": {
+      "main": [
+        [
+          {
+            "node": "Get balance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get User Data failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get balance": {
+      "main": [
+        [
+          {
+            "node": "If has balance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get balance failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If has balance": {
+      "main": [
+        [
+          {
+            "node": "Create playlist entry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No balance failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create playlist entry": {
+      "main": [
+        [
+          {
+            "node": "Success response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Creation failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get artists by city": {
+      "main": [
+        [
+          {
+            "node": "If artists exist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update status - Artist error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Update status - Finding songs on spotify",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update status - AI error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse result": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Spotify track": {
+      "main": [
+        [
+          {
+            "node": "Extract Spotify ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Update status - Creating playlist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create playlist": {
+      "main": [
+        [
+          {
+            "node": "Add songs to playlist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update status - Playlist error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add songs to playlist": {
+      "main": [
+        [
+          {
+            "node": "Update status - Created",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update status - Playlist song error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Spotify ID": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Find Spotify track",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract artist names": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update status - Finding songs": {
+      "main": [
+        [
+          {
+            "node": "Extract artist names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If artists exist": {
+      "main": [
+        [
+          {
+            "node": "Update status - Finding songs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update status - Artist error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success response": {
+      "main": [
+        [
+          {
+            "node": "Get artists by city",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update status - Finding songs on spotify": {
+      "main": [
+        [
+          {
+            "node": "Parse result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update status - Creating playlist": {
+      "main": [
+        [
+          {
+            "node": "Combine all spotify ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine all spotify ids": {
+      "main": [
+        [
+          {
+            "node": "Format spotify track uris",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format spotify track uris": {
+      "main": [
+        [
+          {
+            "node": "Create playlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update status - Created": {
+      "main": [
+        [
+          {
+            "node": "Set charge client to true",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set charge client to true": {
+      "main": [
+        [
+          {
+            "node": "Calculate costs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set charge client to false": {
+      "main": [
+        [
+          {
+            "node": "Calculate costs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update status - Playlist song error": {
+      "main": [
+        [
+          {
+            "node": "Set charge client to false",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update status - Playlist error": {
+      "main": [
+        [
+          {
+            "node": "Set charge client to false",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update status - AI error": {
+      "main": [
+        [
+          {
+            "node": "Set charge client to false",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate costs": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Format tracks for delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format tracks for delete": {
+      "main": [
+        [
+          {
+            "node": "Delete songs from playlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete songs from playlist": {
+      "main": [
+        [
+          {
+            "node": "Delete playlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete playlist": {
+      "main": [
+        [
+          {
+            "node": "Update status - Payment error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "de020ab7-642e-4b2e-90a7-ad4542335975",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "PXcV1RYk51YpvdBx",
+  "tags": []
+}

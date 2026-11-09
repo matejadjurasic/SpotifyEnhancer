@@ -1,0 +1,205 @@
+{
+  "name": "AddArtists",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -32
+      ],
+      "id": "85044548-1066-43a7-8b76-a569b978932f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "artist",
+        "operation": "search",
+        "query": "={{ $('Edit Fields').item.json.Name }}",
+        "limit": 1,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.spotify",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -32
+      ],
+      "id": "60b1a1ef-b523-4b56-be5a-75a64aa78106",
+      "name": "Search artists by keyword",
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "ijz2dviTjDDIEuCG",
+          "name": "Spotify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "artists",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.name }}"
+            },
+            {
+              "fieldId": "spotify_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "image_url",
+              "fieldValue": "={{ $json.images[0].url }}"
+            },
+            {
+              "fieldId": "popularity",
+              "fieldValue": "={{ $json.popularity }}"
+            },
+            {
+              "fieldId": "city",
+              "fieldValue": "={{ $('HTTP Request').item.json.name }}"
+            },
+            {
+              "fieldId": "latitude",
+              "fieldValue": "={{ $('HTTP Request').item.json.lat }}"
+            },
+            {
+              "fieldId": "longitude",
+              "fieldValue": "={{ $('HTTP Request').item.json.lon }}"
+            },
+            {
+              "fieldId": "genres",
+              "fieldValue": "={{ $json.genres }}"
+            },
+            {
+              "fieldId": "country",
+              "fieldValue": "={{ $('HTTP Request').item.json.country }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -32
+      ],
+      "id": "fbb3d028-95d9-4c0f-9ce0-6741a4f7c99c",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wzBUgYImJuUoujW3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "720eff08-ccc5-40df-b977-b734518adb46",
+              "name": "City",
+              "value": "Belgrade",
+              "type": "string"
+            },
+            {
+              "id": "3dc852b9-0d15-47db-8af1-acfe67581b92",
+              "name": "CountryCode",
+              "value": "RS",
+              "type": "string"
+            },
+            {
+              "id": "2dc2315c-6adc-4665-9f26-d4ce33cca78c",
+              "name": "Name",
+              "value": "Konstrakta",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        16,
+        -32
+      ],
+      "id": "304af53f-e5aa-4ac0-a26b-77c948ac88dd",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "=http://api.openweathermap.org/geo/1.0/direct?q={{ $json.City }},{{ $json.CountryCode }}&limit=1&appid=752667ff0ad1f03d7abff59e2f700d4b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        -32
+      ],
+      "id": "0820a7f3-d823-4dd3-8e76-356a4693a449",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search artists by keyword": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Search artists by keyword",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c716ddfc-0c1d-4ca1-9ac9-88f96d977b96",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4827df538e6e4f4e64427e10fabba3f2ff01bad180312485e24986d3f6844a3"
+  },
+  "id": "Hq4o9yQQo7E9rO8M",
+  "tags": []
+}
